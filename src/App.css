@@ -1,0 +1,286 @@
+.loginTitle {
+  font-size: 45px;
+  font-weight: 800;
+  letter-spacing: 0.15rem;
+}
+
+body {
+  font-size: 11px;
+}
+
+label {
+  font-size: 12px;
+}
+
+.iconSize {
+  font-size: 16px;
+}
+
+.tableSz {
+  font-size: 11px;
+}
+
+.contTitle {
+  font-size: 13px;
+}
+
+.loginTrm {
+  width: 25%;
+  height: 2.3rem;
+}
+.saveId {
+  font-size: 14px;
+  width: 25%;
+  height: 2.3rem;
+}
+
+.loginLink {
+  display: flex;
+  gap: 10%;
+  width: 40%;
+  height: 5rem;
+  font-weight: 700;
+  align-items: center;
+  font-size: 16px;
+  justify-content: center;
+}
+
+.imgLink {
+  width: 15%;
+}
+
+.imgArray {
+  display: flex;
+  width: 100%;
+  height: 5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 5%;
+}
+
+.btnHeight {
+  height: 2.2rem;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.anyInput {
+  height: 2.3rem;
+}
+
+.mainInput {
+  height: 2rem;
+}
+
+.scroll-y-no-bar {
+  overflow-y: auto;
+  overflow-x: auto; /* 세로 스크롤 가능하게 */
+}
+
+.scroll-y-no-bar::-webkit-scrollbar {
+  scrollbar-width: none;
+  display: none; /* Chrome, Safari */
+}
+/* 가로/세로 스크롤바 숨기기 공통 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE, Edge 구버전 */
+  scrollbar-width: none; /* Firefox */
+}
+
+@media (max-width: 1024px) {
+  .loginTitle {
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: 0.05rem;
+  }
+  body {
+    font-size: 9px;
+  }
+  .iconSize {
+    font-size: 14px;
+  }
+  .loginTrm {
+    width: 40%;
+    height: 2.2rem;
+  }
+
+  .anyInput {
+    height: 2.2rem;
+  }
+  .mainInput {
+    height: 1.9rem;
+  }
+  .saveId {
+    font-size: 12px;
+    width: 40%;
+    height: 2.2rem;
+  }
+  .loginLink {
+    display: flex;
+    gap: 10%;
+    width: 70%;
+    height: 5rem;
+    font-weight: 700;
+    align-items: center;
+    font-size: 15px;
+    justify-content: center;
+  }
+  .btnHeight {
+    height: 1.8rem;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  label {
+    font-size: 12px;
+  }
+  .contTitle {
+    font-size: 13px;
+  }
+  .tableSz {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .loginTitle {
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: 0.05rem;
+  }
+  body {
+    font-size: 9px;
+  }
+  .iconSize {
+    font-size: 14px;
+  }
+  .loginTrm {
+    width: 40%;
+    height: 2.2rem;
+  }
+  .anyInput {
+    height: 2.2rem;
+  }
+  .mainInput {
+    height: 1.9rem;
+  }
+  .saveId {
+    font-size: 12px;
+    width: 40%;
+    height: 2.2rem;
+  }
+  .loginLink {
+    display: flex;
+    gap: 8%;
+    width: 70%;
+    height: 5rem;
+    font-weight: 700;
+    align-items: center;
+    font-size: 14px;
+    justify-content: center;
+  }
+  .btnHeight {
+    height: 1.8rem;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  label {
+    font-size: 11px;
+  }
+  .contTitle {
+    font-size: 12px;
+  }
+  .tableSz {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 425px) {
+  .loginTitle {
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: 0.05rem;
+  }
+  body {
+    font-size: 8px;
+  }
+  .iconSize {
+    font-size: 12px;
+  }
+  .loginTrm {
+    width: 90%;
+    height: 2rem;
+  }
+  .anyInput {
+    height: 2rem;
+  }
+  .mainInput {
+    height: 1.7rem;
+  }
+  .saveId {
+    font-size: 10px;
+    width: 90%;
+    height: 2rem;
+  }
+  .loginLink {
+    display: flex;
+    gap: 7%;
+    width: 100%;
+    height: 3rem;
+    font-weight: 700;
+    align-items: center;
+    font-size: 10px;
+    justify-content: center;
+  }
+
+  .imgLink {
+    width: 40%;
+  }
+
+  .imgArray {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 8rem;
+    align-items: center;
+    justify-content: center;
+    gap: 3%;
+  }
+  .btnHeight {
+    height: 1.8rem;
+    font-size: 9px;
+    font-weight: 700;
+  }
+  label {
+    font-size: 10px;
+  }
+  .contTitle {
+    font-size: 11px;
+  }
+  .tableSz {
+    font-size: 9px;
+  }
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #000000; /* 글자색 유지 */
+  caret-color: #000000; /* 커서색 유지 */
+  transition: background-color 9999s ease-out; /* 깜빡임 방지 */
+}
+
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+.no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
