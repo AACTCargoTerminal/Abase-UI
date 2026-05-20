@@ -180,13 +180,14 @@ export type TableObjType = "NUM" | "DOUBLE" | "STR";
 export type TableBodyOptType =
   | { type: "NONE" }
   | { type: "CHK" }
-  | { type: "WRITE" }
+  | { type: "WRITE"; ext?: number }
   | { type: "ICON"; icon: IconNameType; value: string; color: string }
   | {
       type: "DROPDOWN";
       header: TableHeaderType[];
       body: TableRow[];
       inputKey: { key: string; showKey: string };
+      find?: boolean;
     };
 
 export type IconNameType = "PIN";

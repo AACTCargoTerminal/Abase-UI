@@ -884,6 +884,7 @@ export function convDateAndTime(type: "DATE" | "TIME", v: string) {
 export async function getClass(
   classCode: string,
   pgmId: string,
+  emptyFlag?: boolean,
 ): Promise<TableRow[]> {
   const res = await getApi<TableRow[]>({
     baseUrl: "SYS",
@@ -894,6 +895,9 @@ export async function getClass(
 
   if (res.ok) {
     if (res.data) {
+      if (emptyFlag !== undefined && emptyFlag) {
+        return [{ CODE_CODE: "", CODE_NAME: "-" }, ...res.data];
+      }
       return res.data;
     }
   }

@@ -190,7 +190,7 @@ const CommonMgm = forwardRef<PageHandle, DefInfraComp>(
       async (classCode: string, codeName: string, usableFlag: string) => {
         sendLoading(true);
         const res = await getApi<Record<number, TableRow[]>>({
-          baseUrl: "AUTH",
+          baseUrl: "SYS",
           method: "GET",
           url: `/sys/getCodeA010Mgm?classCode=${classCode}&codeName=${codeName}&usableFlag=${usableFlag}`,
           pgmId: pgmId,
@@ -313,7 +313,7 @@ const CommonMgm = forwardRef<PageHandle, DefInfraComp>(
 
         sendLoading(true);
         const res = await getApi<Record<number, TableRow[]>>({
-          baseUrl: "AUTH",
+          baseUrl: "SYS",
           method: "POST",
           url: `/sys/setCodeA010_012`,
           params: map,
@@ -355,7 +355,7 @@ const CommonMgm = forwardRef<PageHandle, DefInfraComp>(
 
         sendLoading(true);
         const res = await getApi<Record<number, TableRow[]>>({
-          baseUrl: "AUTH",
+          baseUrl: "SYS",
           method: "POST",
           url: `/sys/setCodeA010_022`,
           params: map,

@@ -411,23 +411,16 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     }
 
     const setWorkM010_017 = useCallback(async () => {
-      const tmp = Object.keys(chkSelect)
-        .filter((v) => chkSelect[getInt(v)] === true)
-        .map((v) => getInt(v));
-      if (tmp.length === 0) {
-        sendErr("선택한 근무자가 없습니다.");
+      if (!hrpatSelect) {
+        sendErr("파트를 선택해주세요");
         return;
       }
-      const map = new Map<string, any>();
-      map.set("date", date);
-      map.set("userArray", tmp);
       sendLoading(true);
 
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
-        method: "POST",
-        url: `/work/setWorkM010_017`,
-        params: map,
+        method: "GET",
+        url: `/work/setWorkM010_017?date=${date}&teamCode=${hrpatSelect}`,
         pgmId: pgmId,
         sucFlag: true,
       });
@@ -676,11 +669,13 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                   </div>
                 </div>
                 <div className="flex gap-3 items-center">
-                  <span className="text-nowrap font-bold">--- 최신 상태</span>
+                  <span className="text-nowrap font-bold">--- 상태</span>
                   {hrreq.map((hv, i) => {
                     return (
                       <div className="flex gap-2 items-center mainInput">
-                        <div className={`size-3 bg-[${HRREQ_HEADER[i]}]`}></div>
+                        <div
+                          className={`size-3`}
+                          style={{ backgroundColor: HRREQ_HEADER[i] }}></div>
                         <span className="text-nowrap">
                           {hv?.["CODE_NAME2"] || ""}
                         </span>

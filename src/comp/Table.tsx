@@ -1685,6 +1685,7 @@ const CellCust2 = React.memo(
                         );
                       }
                     }}
+                    find={headerType.option.find}
                   />
                 </div>
               );
@@ -1724,6 +1725,7 @@ const CellCust2 = React.memo(
                           );
                         }
                       }}
+                      find={headerType.option.find}
                     />
                   </div>
                 );
@@ -1820,7 +1822,8 @@ function WriteCell({
       confirmObj({
         obj: value,
         type: headerType.type || "STR",
-        fix: headerType.sum,
+        fix:
+          (headerType.option?.type === "WRITE" && headerType.option.ext) || 0,
       }) ?? "",
     ),
   );
@@ -1834,16 +1837,26 @@ function WriteCell({
         confirmObj({
           obj: value,
           type: headerType.type || "STR",
-          fix: headerType.sum,
+          fix:
+            (headerType.option?.type === "WRITE" && headerType.option.ext) || 0,
         }) ?? "",
       ),
     );
-  }, [value, headerType.type, headerType.sum]);
+  }, [value, headerType.type]);
 
   const commit = (raw: string) => {
     const committed = headerType.type
-      ? confirmObj({ obj: raw, type: headerType.type, fix: headerType.sum })
+      ? confirmObj({
+          obj: raw,
+          type: headerType.type,
+          fix:
+            (headerType.option?.type === "WRITE" && headerType.option.ext) || 0,
+        })
       : raw;
+
+    const parsedText = String(committed ?? "");
+
+    setLocal(parsedText); // 핵심
     changeValue?.(headerType.key, committed);
   };
 
@@ -1860,19 +1873,14 @@ function WriteCell({
       onCompositionEnd={(e) => {
         composingRef.current = false;
         const raw = e.currentTarget.value;
-        setLocal(raw);
         commit(raw); // ✅ 조합 끝나면 반영
       }}
       onChange={(e) => {
         const raw = e.target.value;
         setLocal(raw);
-        if (composingRef.current) return; // ✅ 조합 중엔 상위 반영 금지
-        // 영문/숫자 등은 즉시 반영해도 OK
-        changeValue?.(headerType.key, raw);
       }}
       onBlur={(e) => {
         const raw = e.target.value;
-        setLocal(raw);
         commit(raw); // ✅ 포커스 빠질 때 최종 반영
       }}
       onKeyDown={(e) => {
