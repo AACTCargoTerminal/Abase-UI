@@ -27,7 +27,7 @@ const InfraMobileMenu = ({
     const res = await getApi({
       baseUrl: "AUTH",
       method: "GET",
-      url: `/auth/logout`,
+      url: `/user/logout`,
       pgmId: "",
     });
 
