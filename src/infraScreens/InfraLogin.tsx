@@ -32,14 +32,13 @@ const InfraLogin = () => {
     });
     if (res.ok) {
       navigate("/Infra/Main");
+    } else {
+      document.getElementById("loginId")?.focus();
     }
   }
 
   useEffect(() => {
-    if (getCookie("WMSSESSION")) {
-      check();
-    }
-    document.getElementById("loginId")?.focus();
+    check();
   }, []);
 
   useEffect(() => {

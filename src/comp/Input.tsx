@@ -497,6 +497,7 @@ export function TimeInput({
     e: React.ChangeEvent<HTMLInputElement>;
   }) {
     const selectTmp = e.target.selectionStart;
+
     if (selectTmp === null) return;
     // 기본값: 현재 표시값, 없으면 00:00 / 00:00:00
     const safeValue =
@@ -507,81 +508,121 @@ export function TimeInput({
           : "00:00:00";
 
     const targetTmp = e.target.value;
-    const insertTmp = targetTmp.slice(selectTmp - 1, selectTmp);
-    const onlyNumber = /^[0-9]+$/;
+    if (targetTmp.length <= 1) {
+      const digits = targetTmp.replace(/\D/g, "");
 
-    let changeValue = safeValue;
-    let nextPos = selectTmp;
+      if (digits.length === 0) return;
 
-    if (displayValue.length > targetTmp.length) {
-      let replaceIndex = selectTmp;
+      const maxLen = type === "HH:mm" ? 4 : 6;
+      const padded = digits.padEnd(maxLen, "0").slice(0, maxLen);
 
-      // 만약 그 자리가 ':' 이면 한 칸 왼쪽 자리 숫자를 0으로 바꾼다
-      if (safeValue[replaceIndex] === ":") {
-        replaceIndex = replaceIndex - 1;
-      }
+      const changeValue =
+        type === "HH:mm"
+          ? `${padded.slice(0, 2)}:${padded.slice(2, 4)}`
+          : `${padded.slice(0, 2)}:${padded.slice(2, 4)}:${padded.slice(4, 6)}`;
 
-      // 범위 방어
-      if (replaceIndex < 0 || replaceIndex >= safeValue.length) return;
-      if (safeValue[replaceIndex] === ":") return; // 여전히 ':'이면 그냥 무시
+      const m = moment(changeValue, type, true);
+      if (!m.isValid()) return;
 
-      // 그 자리를 '0'으로 채우기
-      changeValue =
-        safeValue.slice(0, replaceIndex) +
-        "0" +
-        safeValue.slice(replaceIndex + 1);
+      const formatted = m.format(type);
 
-      // 커서는 "한 칸 뒤"로
-      nextPos = replaceIndex;
+      let nextPos = selectTmp;
 
-      // 콜론 위치는 뛰어넘기 (왼쪽으로 갈 때)
       if (type === "HH:mm") {
-        // HH:mm 에서 ':' 인덱스는 2
-        if (nextPos === 2) nextPos = 1;
-      } else {
-        // HH:mm:ss 에서 ':' 인덱스는 2, 5
-        if (nextPos === 2) nextPos = 1;
-        if (nextPos === 5) nextPos = 4;
-      }
-    } else {
-      // 숫자만 허용
-      if (!onlyNumber.test(insertTmp)) {
-        return;
-      }
-      changeValue =
-        safeValue.slice(0, selectTmp - 1) +
-        insertTmp +
-        safeValue.slice(selectTmp);
-
-      // 다음 칸으로 커서 이동
-      nextPos = selectTmp;
-      if (type === "HH:mm") {
-        if (nextPos === 2) nextPos = 3; // ':' 건너뛰기
+        if (nextPos === 2) nextPos = 3;
       } else {
         if (nextPos === 2) nextPos = 3;
         if (nextPos === 5) nextPos = 6;
       }
-    }
 
-    // 시간 포맷 검사
-    if (!getTimeRegex(type).test(changeValue)) {
-      return;
-    }
+      nextCaretPosRef.current = nextPos;
+      setDisplayValue(formatted);
 
-    const m = moment(changeValue, type, true);
-    if (!m.isValid()) {
+      // 값이 기존값과 같으면 useEffect가 안 타니까 직접 커서 이동
+      if (formatted === displayValue) {
+        requestAnimationFrame(() => {
+          inputRef.current?.setSelectionRange(nextPos, nextPos);
+        });
+      }
+
       return;
-    }
-    const formatted = m.format(type);
-    nextCaretPosRef.current = nextPos;
-    setDisplayValue(formatted);
-    if (formatted === displayValue && inputRef.current) {
-      // React가 value를 다시 세팅한 뒤에 실행되도록 살짝 늦게
-      requestAnimationFrame(() => {
-        if (inputRef.current) {
-          inputRef.current.setSelectionRange(nextPos, nextPos);
+    } else {
+      const insertTmp = targetTmp.slice(selectTmp - 1, selectTmp);
+      const onlyNumber = /^[0-9]+$/;
+
+      let changeValue = safeValue;
+      let nextPos = selectTmp;
+
+      if (displayValue.length > targetTmp.length) {
+        let replaceIndex = selectTmp;
+
+        // 만약 그 자리가 ':' 이면 한 칸 왼쪽 자리 숫자를 0으로 바꾼다
+        if (safeValue[replaceIndex] === ":") {
+          replaceIndex = replaceIndex - 1;
         }
-      });
+
+        // 범위 방어
+        if (replaceIndex < 0 || replaceIndex >= safeValue.length) return;
+        if (safeValue[replaceIndex] === ":") return; // 여전히 ':'이면 그냥 무시
+
+        // 그 자리를 '0'으로 채우기
+        changeValue =
+          safeValue.slice(0, replaceIndex) +
+          "0" +
+          safeValue.slice(replaceIndex + 1);
+
+        // 커서는 "한 칸 뒤"로
+        nextPos = replaceIndex;
+
+        // 콜론 위치는 뛰어넘기 (왼쪽으로 갈 때)
+        if (type === "HH:mm") {
+          // HH:mm 에서 ':' 인덱스는 2
+          if (nextPos === 2) nextPos = 1;
+        } else {
+          // HH:mm:ss 에서 ':' 인덱스는 2, 5
+          if (nextPos === 2) nextPos = 1;
+          if (nextPos === 5) nextPos = 4;
+        }
+      } else {
+        // 숫자만 허용
+        if (!onlyNumber.test(insertTmp)) {
+          return;
+        }
+        changeValue =
+          safeValue.slice(0, selectTmp - 1) +
+          insertTmp +
+          safeValue.slice(selectTmp);
+
+        // 다음 칸으로 커서 이동
+        nextPos = selectTmp;
+        if (type === "HH:mm") {
+          if (nextPos === 2) nextPos = 3; // ':' 건너뛰기
+        } else {
+          if (nextPos === 2) nextPos = 3;
+          if (nextPos === 5) nextPos = 6;
+        }
+      }
+
+      // 시간 포맷 검사
+      if (!getTimeRegex(type).test(changeValue)) {
+        return;
+      }
+
+      const m = moment(changeValue, type, true);
+      if (!m.isValid()) {
+        return;
+      }
+      const formatted = m.format(type);
+      nextCaretPosRef.current = nextPos;
+      setDisplayValue(formatted);
+      if (formatted === displayValue && inputRef.current) {
+        // React가 value를 다시 세팅한 뒤에 실행되도록 살짝 늦게
+        requestAnimationFrame(() => {
+          if (inputRef.current) {
+            inputRef.current.setSelectionRange(nextPos, nextPos);
+          }
+        });
+      }
     }
   }
 

@@ -235,6 +235,10 @@ export const CommonDropDown = React.memo(
 
           return next;
         });
+        if (find) {
+          setFilterTxt("");
+          document.getElementById("findDoc")?.focus();
+        }
       }
     };
 
@@ -416,6 +420,7 @@ export const CommonDropDown = React.memo(
                     onChange={(e) => {
                       setFilterTxt(e.target.value);
                     }}
+                    id="findDoc"
                     placeholder="Find"
                     autoComplete="off"
                     onKeyDown={(e) => {

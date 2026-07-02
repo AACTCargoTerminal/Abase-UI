@@ -30,9 +30,34 @@ const GRID1_HEADER: TableHeaderType[] = [
   { key: "DETAIL_STATUS", value: "최신상태", w: "7rem" },
   { key: "REQ_START_TIME", value: "시작시간", w: "3rem" },
   { key: "REQ_END_TIME", value: "종료시간", w: "3rem" },
-  { key: "ADD_WORK_HOUR", value: "연장근무시간", w: "4rem" },
-  { key: "NIGHT_WORK_HOUR", value: "야간근무시간", w: "4rem" },
-  { key: "HOLIDAY_WORK_HOUR", value: "휴일근무시간", w: "4rem" },
+  {
+    key: "ADD_WORK_HOUR",
+    value: "연장근무시간",
+    w: "4rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
+  {
+    key: "NIGHT_WORK_HOUR",
+    value: "야간근무시간",
+    w: "4rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
+  {
+    key: "HOLIDAY_WORK_HOUR",
+    value: "휴일근무시간",
+    w: "4rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
+  {
+    key: "HOLIDAY_ADD_HOUR",
+    value: "휴일연장근무",
+    w: "5rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
   { key: "REMARK", value: "사유", w: "10rem" },
 ];
 
@@ -144,7 +169,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
         const res = await getApi<Record<number, TableRow[]>>({
           baseUrl: "INFRA",
           method: "POST",
-          url: `/work/setWorkM010_022?date=${date}`,
+          url: `/work/setWorkM010_022?adminFlag=N`,
           pgmId: pgmId,
           params: map,
           sucFlag: true,
@@ -200,7 +225,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
                           {
                             id: "WORK_TIME_INS",
                             name: "신청서",
-                            param: { date: date },
+                            param: { date: date, userSid: 0, seq: -1 },
                           },
                         ],
                       });
@@ -238,7 +263,11 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
                   {
                     id: "WORK_TIME_INS",
                     name: "신청서",
-                    param: { date: date },
+                    param: {
+                      date: date,
+                      userSid: v["USER_SID"],
+                      seq: v["SEQ"],
+                    },
                   },
                 ],
               });

@@ -249,7 +249,7 @@ const CommonMgm = forwardRef<PageHandle, DefInfraComp>(
                   disable: undefined,
                   option: {
                     type: "DROPDOWN",
-                    body: value,
+                    body: [{ CODE_CODE: "", CODE_NAME: "" }, ...value],
                     header: commonHeader4,
                     inputKey: { key: "CODE_CODE", showKey: "1" },
                   },

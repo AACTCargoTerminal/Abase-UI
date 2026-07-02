@@ -1077,6 +1077,8 @@ export const TableCust2 = React.memo(
     }, [header]);
 
     useEffect(() => {
+      setDtAllOpen(false);
+      setChkAllOpen(false);
       setCopBody(body.map((b) => ({ ...b })));
     }, [body]);
 
@@ -1252,13 +1254,51 @@ export const TableCust2 = React.memo(
                         left: isSticky ? left : undefined,
                         backgroundColor: "inherit",
                       }}>
-                      <div className="flex items-center justify-center cursor-pointer w-full h-full">
+                      <div
+                        className="flex items-center justify-center cursor-pointer w-full h-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (sort[r.key]) {
+                            if (sort[r.key] === "ASC") {
+                              setSort((prev) => ({
+                                ...prev,
+                                [r.key]: "DESC",
+                              }));
+                              const data = sortTable({
+                                type: "DESC",
+                                table: copBody,
+                                key: r.key,
+                              });
+                              setCopBody(data);
+                            } else {
+                              setSort((prev) => ({
+                                ...prev,
+                                [r.key]: "ASC",
+                              }));
+                              const data = sortTable({
+                                type: "ASC",
+                                table: copBody,
+                                key: r.key,
+                              });
+                              setCopBody(data);
+                            }
+                          } else {
+                            setSort((prev) => ({ ...prev, [r.key]: "ASC" }));
+                            const data = sortTable({
+                              type: "ASC",
+                              table: copBody,
+                              key: r.key,
+                            });
+                            setCopBody(data);
+                          }
+                        }}>
                         <input
                           type="checkbox"
                           checked={chkAllOpen}
                           className="h-full accent-gray-300 rounded-md size-4 text-center"
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => {
+                            e.stopPropagation();
                             setChkAllOpen(e.target.checked);
                             setCopBody((prev) =>
                               prev.map((v) => ({
@@ -1545,7 +1585,7 @@ const RowCust2 = React.memo(
         }`}
         onClick={(e) => {
           e.stopPropagation();
-          onClick();
+          onClick?.();
         }}>
         {header.map((h, j) => {
           if (h.disable && !(h.option?.type === "CHK")) {

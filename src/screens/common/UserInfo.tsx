@@ -21,6 +21,7 @@ import { CommonDropDown } from "../../comp/DropDown";
 import { useNavigate } from "react-router-dom";
 import { Btn } from "../../comp/Btn";
 import { pushUserInfo } from "../../slices/user";
+import { IoRefreshOutline, IoReload } from "react-icons/io5";
 
 const header: TableHeaderType[] = [
   { key: "CODE_NAME", value: "코드명", w: "" },
@@ -74,7 +75,7 @@ export default function UserInfo({
     const res = await getApi<UserInfoType>({
       baseUrl: "AUTH",
       method: "GET",
-      url: "/auth/verity",
+      url: "/user/verity",
       pgmId: "",
     });
     if (!res.ok) {
@@ -159,6 +160,41 @@ export default function UserInfo({
       check();
       onClose();
     }
+  }
+
+  async function rotateAndUpload() {
+    const img = new Image();
+
+    img.src = `data:${formData?.signType || "image/png"};base64,${formData?.signData}`;
+
+    img.onload = async () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) return;
+
+      canvas.width = img.height;
+      canvas.height = img.width;
+
+      // ✅ 투명 배경 유지
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((90 * Math.PI) / 180);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      ctx.restore();
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+
+        const file = new File([blob], "sign.png", {
+          type: "image/png",
+        });
+
+        await setUserSign(file);
+      }, "image/png");
+    };
   }
 
   return (
@@ -335,8 +371,12 @@ export default function UserInfo({
       </div>
       <div className="col-span-2 flex flex-col gap-1">
         {" "}
-        <div>
+        <div className="flex items-center">
           <CommonLabel id="sign" align="COL" label="서명등록" justify="START" />
+          <IoReload
+            className="hover:bg-gray-300 rounded-md h-[90%] w-[8%] p-[1%] cursor-pointer"
+            onClick={rotateAndUpload}
+          />
         </div>
         <div
           onClick={(e) => {

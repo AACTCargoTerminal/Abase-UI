@@ -18,9 +18,9 @@ export const commonHeader4: TableHeaderType[] = [
 
 export const commonHeader5: TableHeaderType[] = [
   { key: "CODE_CODE", value: "코드", w: "5rem", sum: 0 },
-  { key: "VALUE5_CHAR", value: "약어", w: "5rem" },
-  { key: "VALUE2_CHAR", value: "시작시간", w: "8rem" },
-  { key: "VALUE3_CHAR", value: "종료시간", w: "8rem" },
+  { key: "CODE_NAME", value: "코드명", w: "8rem", sum: 0 },
+  { key: "VALUE2_CHAR", value: "시작시간", w: "5rem" },
+  { key: "VALUE3_CHAR", value: "종료시간", w: "5rem" },
 ];
 
 export const SchChgHeader: TableHeaderType[] = [
