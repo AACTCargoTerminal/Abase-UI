@@ -16,6 +16,7 @@ const initialState: UserState = {
   loading: false,
   sch: { schSid: 0, inout: "I", fltDate: moment().format("YYYYMMDD") },
   modalRoute: { flag: false },
+  authCheck: false,
 };
 
 const userSlice = createSlice({
@@ -94,6 +95,9 @@ const userSlice = createSlice({
       state.modalRoute.flag = true;
       state.modalRoute.modalRoute = action.payload.route;
     },
+    changeAutoFlag(state, action: PayloadAction<boolean>) {
+      state.authCheck = action.payload;
+    },
   },
 });
 
@@ -110,5 +114,6 @@ export const {
   pushSchInout,
   pushModalFlag,
   modalOpen,
+  changeAutoFlag,
 } = userSlice.actions;
 export default userSlice.reducer;

@@ -120,10 +120,7 @@ const Header = React.memo(
           url: "/user/verity",
           pgmId: "",
         });
-        dispatch(changeServer(res.ok));
-        if (!res.ok) {
-          navigate("/Sams");
-        } else {
+        if (res.ok) {
           if (res.data) {
             dispatch(pushUserInfo(res.data));
           }

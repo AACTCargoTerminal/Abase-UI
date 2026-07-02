@@ -9,7 +9,7 @@ import {
   setCookie,
 } from "../../Util/Util";
 import { CommonChk, CommonInput, PwdInput } from "../../comp/Input";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { FaRegCheckCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import aact from "../../assets/images/aact.png";
@@ -20,8 +20,9 @@ import { ModalCust } from "../../comp/Common";
 import AnyBoard from "../blind/AnyBoard";
 import AnyBoardDetail from "../blind/AnyBoardDetail";
 import { clearAllErr } from "../../slices/err";
-import { clearAllUser } from "../../slices/user";
+import { changeAutoFlag, clearAllUser } from "../../slices/user";
 import { Btn } from "../../comp/Btn";
+import type { RootState } from "../../slices/store";
 
 const dict: Record<number, string> = { 0: "블라인드 게시판", 1: "익명 게시판" };
 const header: TableHeaderType[] = [
@@ -33,6 +34,7 @@ const trmData: TableRow[] = [
 ];
 
 export default function Login() {
+  const autoFlag = useSelector((state: RootState) => state.user.authCheck);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [blindOpen, setBlindOpen] = useState(false);
@@ -62,15 +64,16 @@ export default function Login() {
     });
     if (res.ok) {
       navigate("/Sams/Main");
+    } else {
+      document.getElementById("loginId")?.focus();
     }
   }
 
   useEffect(() => {
-    if (getCookie("WMSSESSION")) {
+    if (!autoFlag) {
       check();
     }
-    document.getElementById("loginId")?.focus();
-  }, []);
+  }, [autoFlag]);
 
   useEffect(() => {
     dispatch(clearAllErr());
@@ -98,6 +101,7 @@ export default function Login() {
       pgmId: "LOGIN",
     });
     if (loginRes.ok) {
+      dispatch(changeAutoFlag(false));
       if (loginRes.data) {
         navigate("/Sams/Main");
       }

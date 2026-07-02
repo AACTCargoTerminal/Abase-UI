@@ -69,6 +69,7 @@ export type UserState = {
   sch: UserSchType;
   loading: boolean;
   modalRoute: ModalRouteType;
+  authCheck: boolean;
 };
 
 export type UserSchType = { schSid: number; fltDate: string; inout: string };

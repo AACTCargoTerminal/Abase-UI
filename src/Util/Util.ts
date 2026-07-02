@@ -13,6 +13,7 @@ import type {
   TableSortType,
 } from "./Type";
 import {
+  changeAutoFlag,
   deleteNav,
   modalOpen,
   pushLoading,
@@ -192,10 +193,10 @@ export async function getApi<T>({
               errMsg: String(r.data),
             }),
           );
-          store.dispatch(changeRd(true));
 
           return { ok: false, data: null };
-        case 403:
+        case 401:
+          store.dispatch(changeAutoFlag(true));
           store.dispatch(
             pushError({ id: uuidv4(), errFlag: "Y", errMsg: "재인증 필요" }),
           );
@@ -253,7 +254,6 @@ export async function getApi<T>({
     store.dispatch(
       pushError({ id: uuidv4(), errFlag: "Y", errMsg: e.message }),
     );
-    store.dispatch(changeRd(true));
     return { ok: false, data: null };
   }
 }
