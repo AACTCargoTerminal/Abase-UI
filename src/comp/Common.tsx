@@ -54,21 +54,8 @@ export const Error = () => {
   const { pathname } = useLocation();
   const dispatch = useDispatch();
 
-  async function logout() {
-    const res = await getApi({
-      baseUrl: "AUTH",
-      method: "GET",
-      url: `/user/logout`,
-      pgmId: "",
-    });
-  }
-
   useEffect(() => {
     if (!err.rd) return;
-
-    logout();
-    const tmp = pathname.split("/");
-    navigate("/" + tmp[1]);
 
     const timer = setTimeout(() => {
       dispatch(clearAllErr());
