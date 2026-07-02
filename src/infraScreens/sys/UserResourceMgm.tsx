@@ -14,6 +14,7 @@ import { commonHeader2 } from "../../Util/Header";
 import { CommonDatePicker, CommonDropDown } from "../../comp/DropDown";
 import { CommonInput, CommonLabel, DateInput } from "../../comp/Input";
 import { ToggleBtn } from "../../comp/Common";
+import dayjs from "dayjs";
 
 const GRID1_HEADER: TableHeaderType[] = [
   { key: "CHK", value: "", w: "3rem" },
@@ -33,6 +34,7 @@ const HRCOS_HEADER: TableHeaderType[] = [
 ];
 
 const OPCOD_HEADER: TableHeaderType[] = [
+  { key: "CODE_NAME", value: "코드명", w: "8rem" },
   { key: "VALUE5_CHAR", value: "코드", w: "5rem", sum: 0 },
 ];
 
@@ -67,8 +69,12 @@ export default function UserResourceMgm({
 
   const [classCode, setClassCode] = useState<Record<string, TableRow[]>>({});
   const [grid1, setGrid1] = useState<TableRow[]>([]);
-  const [hrcosSelect, setHrcosSelect] = useState<TableRow>({});
-  const [hrwktSelect, setHrwktSelect] = useState<TableRow>({});
+  const [hrcosSelect, setHrcosSelect] = useState<TableRow>({
+    VALUE1: dayjs().format("YYYYMMDD"),
+  });
+  const [hrwktSelect, setHrwktSelect] = useState<TableRow>({
+    VALUE1: dayjs().format("YYYYMMDD"),
+  });
   const [hrwdtSelect, setHrwdtSelect] = useState<Record<string, TableRow>>({});
   const [hrdtsSelect, setHrdtsSelect] = useState<Record<string, TableRow>>({});
   const [hrpatSelect, setHrpatSelect] = useState("");
@@ -156,7 +162,6 @@ export default function UserResourceMgm({
       };
       tableTmp.push(hrcosTmp);
     }
-
     if (hrwktSelect?.["CODE_CODE"] && hrwktSelect?.["VALUE1"]) {
       const hrwktTmp: TableRow = {
         CLASS_CODE: "HRWKT",
@@ -272,8 +277,8 @@ export default function UserResourceMgm({
       if (res.data) {
         if (classCode === "OPCOD") {
           const tmp = res.data.filter((v) => {
-            if (!v["VALUE2_CHAR"] && !v["VALUE3_CHAR"]) {
-              return !(v["VALUE4_CHAR"] === "Y");
+            if (v["VALUE7_CHAR"] === "Y" || v["VALUE7_CHAR"] === "A") {
+              return true;
             }
             return false;
           });
@@ -321,7 +326,10 @@ export default function UserResourceMgm({
               value: hrcosSelect?.["CODE_CODE"] || "",
             }}
             onClick={(r) => {
-              setHrcosSelect({ CODE_CODE: r["CODE_CODE"] });
+              setHrcosSelect((prev) => ({
+                ...prev,
+                CODE_CODE: r["CODE_CODE"],
+              }));
             }}
             title="심야교통비"
           />
@@ -350,7 +358,10 @@ export default function UserResourceMgm({
               value: hrwktSelect?.["CODE_CODE"] || "",
             }}
             onClick={(r) => {
-              setHrwktSelect({ CODE_CODE: r["CODE_CODE"] });
+              setHrwktSelect((prev) => ({
+                ...prev,
+                CODE_CODE: r["CODE_CODE"],
+              }));
             }}
             title="근무타입"
           />

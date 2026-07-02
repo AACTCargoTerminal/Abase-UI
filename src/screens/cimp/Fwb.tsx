@@ -5,8 +5,7 @@ import {
   closePage,
   confirmObj,
   getApi,
-  getCommon,
-  getDouble,
+  getClass,
   openModal,
   sendErr,
   sendLoading,
@@ -14,7 +13,6 @@ import {
 import { CommonContainer, CommonTab } from "../../comp/Container";
 import { CommonDatePicker, CommonDropDown } from "../../comp/DropDown";
 import {
-  commonHeader,
   commonHeader2,
   commonHeader4,
   FwbMapInHeader,
@@ -36,34 +34,34 @@ const ULD_TS_HEADER: TableHeaderType[] = [
 ];
 export default function Fwb({ sch, pgmId, param }: DefComp) {
   useEffect(() => {
-    getCommon("APORT", pgmId).then((v) => {
+    getClass("APORT", pgmId).then((v) => {
       setAport(v);
     });
-    getCommon("SPHCD", pgmId).then((v) => {
+    getClass("SPHCD", pgmId).then((v) => {
       setSphcd(v);
     });
-    getCommon("1.5", pgmId).then((v) => {
+    getClass("1.5", pgmId).then((v) => {
       setPc(v);
     });
-    getCommon("CURCD", pgmId).then((v) => {
+    getClass("CURCD", pgmId).then((v) => {
       setCurcd(v);
     });
-    getCommon("1.22", pgmId).then((v) => {
+    getClass("1.22", pgmId).then((v) => {
       setVolume(addTableEmptyRow(v));
     });
-    getCommon("ULDTP", pgmId).then((v) => {
+    getClass("ULDTP", pgmId).then((v) => {
       setUldType(addTableEmptyRow(v));
     });
-    getCommon("CRRCD", pgmId).then((v) => {
+    getClass("CRRCD", pgmId).then((v) => {
       setCarrier(addTableEmptyRow(v));
     });
-    getCommon("NATCD", pgmId).then((v) => {
+    getClass("NATCD", pgmId).then((v) => {
       setCountry(addTableEmptyRow(v));
     });
-    getCommon("1.2", pgmId).then((v) => {
+    getClass("1.2", pgmId).then((v) => {
       setOtherCharge(addTableEmptyRow(v));
     });
-    getCommon("1.3", pgmId).then((v) => {
+    getClass("1.3", pgmId).then((v) => {
       setEntitlement(addTableEmptyRow(v));
     });
     getUldTs();

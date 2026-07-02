@@ -51,6 +51,8 @@ const HRREQ_HEADER = [
   "#6B7280",
   "#EF4444",
   "#8B5CF6",
+  "#14B8A6",
+  "#6366F1",
 ];
 
 const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
@@ -73,9 +75,30 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       yPos: "BOT",
       seq: -1,
     });
+
     const [opcodOpen, setOpcodOpen] = useState<boolean>(false);
     const opcodTbRef = useRef<HTMLDivElement | null>(null);
     const opcodRef = useRef<HTMLElement | null>(null);
+    const [detail, setDetail] = useState<{
+      x: number;
+      y: number;
+      xPos: "LEFT" | "RIGHT";
+      yPos: "TOP" | "BOT";
+      mainIdx: number;
+      subIdx: number;
+      row: TableRow[];
+    }>({
+      x: 0,
+      y: 0,
+      mainIdx: -1,
+      subIdx: -1,
+      xPos: "LEFT",
+      yPos: "BOT",
+      row: [],
+    });
+    const [detailOpen, setDetailOpen] = useState<boolean>(false);
+    const detailTbRef = useRef<HTMLDivElement | null>(null);
+    const detailRef = useRef<HTMLElement | null>(null);
     const [halfTime, setHalfTime] = useState(false);
 
     const [username, setUsername] = useState("");
@@ -115,6 +138,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     const userId = useSelector(
       (state: RootState) => state.user.userInfo?.userId || "",
     );
+    const [btnAuth, setBtnAuth] = useState(false);
     const [hrreq, setHrreq] = useState<TableRow[]>([]);
     const [hrreqHeader, setHrreqHeader] = useState<TableRow>({});
 
@@ -137,7 +161,13 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     async function getHRPAT() {
       const data = await getClass("HRPAT", pgmId);
       setHrpatOrigin(data);
-      const filterTmp = data.filter((ft) => ft["VALUE6_CHAR"] === userId);
+      const filterTmp = data.filter(
+        (ft) =>
+          ft["VALUE6_CHAR"] === userId ||
+          ft["VALUE3_CHAR"] === userId ||
+          ft["VALUE4_CHAR"] === userId ||
+          ft["VALUE5_CHAR"] === userId,
+      );
       setHrpat(filterTmp);
       setHrpatSelect(filterTmp?.[0]?.["CODE_CODE"] || "");
     }
@@ -171,6 +201,35 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     }, [opcodOpen]);
 
     useEffect(() => {
+      const handleClick = (e: MouseEvent) => {
+        if (detailOpen === false) {
+          return;
+        }
+        if (detailOpen && detailTbRef.current?.contains(e.target as Node)) {
+          return;
+        }
+        if (detailOpen && detailRef.current?.contains(e.target as Node)) {
+          return;
+        }
+        setDetail({
+          mainIdx: -1,
+          subIdx: -1,
+          x: 0,
+          y: 0,
+          xPos: "LEFT",
+          yPos: "BOT",
+          row: [],
+        });
+      };
+
+      document.addEventListener("mousedown", handleClick);
+
+      return () => {
+        document.removeEventListener("mousedown", handleClick);
+      };
+    }, [detailOpen]);
+
+    useEffect(() => {
       const tmp: Record<number, boolean> = {};
       grid1.forEach((v) => {
         if (v["USER_SID"]) {
@@ -188,6 +247,13 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         setOpcodOpen(false);
       }
     }, [opcodCss]);
+    useEffect(() => {
+      if (detail.x !== 0 && detail.y !== 0) {
+        setDetailOpen(true);
+      } else {
+        setDetailOpen(false);
+      }
+    }, [detail]);
 
     useEffect(() => {
       let mounted = true;
@@ -214,7 +280,20 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     }, [date]);
     useEffect(() => {
       if (hrpatSelect) {
-        searchClick();
+        const filterData = hrpat.find((v) => v?.["CODE_CODE"] === hrpatSelect);
+        if (filterData) {
+          if (
+            filterData?.["VALUE3_CHAR"] === userId ||
+            filterData?.["VALUE4_CHAR"] === userId ||
+            filterData?.["VALUE5_CHAR"] === userId
+          ) {
+            setBtnAuth(true);
+          } else {
+            setBtnAuth(false);
+          }
+        } else {
+          setBtnAuth(false);
+        }
       }
     }, [hrpatSelect]);
 
@@ -273,6 +352,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
           setGrid1(res.data[0]);
           setOrgGrid1(res.data[0]);
           const tmp: Record<number, Record<string, TableRow[]>> = {};
+
           res.data[1].forEach((r1) => {
             if (r1?.["USER_SID"] && r1?.["DAY"] && r1?.["SEQ"] !== undefined) {
               const userTmp = r1["USER_SID"];
@@ -302,6 +382,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
           });
           setGrid1Dt(tmp);
           setOrgGrid1Dt(tmp);
+
           return;
         }
       }
@@ -370,6 +451,34 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
             seq: seq,
           });
         }
+      } else if (type === "BTN") {
+        const tmp = grid1Dt?.[grid1?.[i]?.["USER_SID"]]?.[idx + 1] || [];
+
+        detailRef.current = e.currentTarget;
+        isSame = detail.mainIdx === i && detail.subIdx === idx;
+        flushSync(() => {
+          setDetail({
+            mainIdx: -1,
+            subIdx: -1,
+            x: 0,
+            y: 0,
+            xPos: "LEFT",
+            yPos: "BOT",
+            row: [],
+          });
+        });
+
+        if (!isSame) {
+          setDetail({
+            x: 500 + rect.right > winW ? rect.right - 500 : rect.left,
+            y: 250 + rect.bottom > winH ? rect.top - 250 : rect.bottom,
+            mainIdx: i,
+            subIdx: idx,
+            xPos: 500 + rect.right > winW ? "LEFT" : "RIGHT",
+            yPos: 250 + rect.bottom > winH ? "TOP" : "BOT",
+            row: tmp,
+          });
+        }
       }
     }
 
@@ -381,6 +490,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         yyyymm: date,
         dayLength: dayLength,
         halfType: halfTime ? "Y" : "N",
+        grid1: orgGrid1,
       });
 
       if (tmp === null) {
@@ -411,23 +521,16 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     }
 
     const setWorkM010_017 = useCallback(async () => {
-      const tmp = Object.keys(chkSelect)
-        .filter((v) => chkSelect[getInt(v)] === true)
-        .map((v) => getInt(v));
-      if (tmp.length === 0) {
-        sendErr("선택한 근무자가 없습니다.");
+      if (!hrpatSelect) {
+        sendErr("파트를 선택해주세요");
         return;
       }
-      const map = new Map<string, any>();
-      map.set("date", date);
-      map.set("userArray", tmp);
       sendLoading(true);
 
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
-        method: "POST",
-        url: `/work/setWorkM010_017`,
-        params: map,
+        method: "GET",
+        url: `/work/setWorkM010_017?date=${date}&teamCode=${hrpatSelect}`,
         pgmId: pgmId,
         sucFlag: true,
       });
@@ -449,10 +552,29 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         sendErr("확정일 에러");
         return;
       }
+
+      const userArray = tmp.flatMap((v) => {
+        const gridDtTmp = Object.keys(orgGrid1Dt?.[v]).flatMap((gv) => {
+          if (
+            orgGrid1Dt?.[v]?.[gv].filter((ogv) => ogv?.["APPROVE_FLAG"] !== "Y")
+              .length > 0 &&
+            gv !== "00" &&
+            Number(gv) <= approveDay
+          ) {
+            return [gv];
+          } else {
+            return [];
+          }
+        });
+        if (gridDtTmp.length > 0) {
+          return [{ userSid: v, dayArray: gridDtTmp }];
+        } else {
+          return [];
+        }
+      });
       const map = new Map<string, any>();
       map.set("date", date);
-      map.set("userArray", tmp);
-      map.set("day", approveDay.toString());
+      map.set("userArray", userArray);
       sendLoading(true);
 
       const res = await getApi<Record<number, TableRow[]>>({
@@ -474,6 +596,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         sendErr("터미널코드가 없습니다.");
         return;
       }
+
       const map = new Map<string, any>();
       map.set("date", date);
       map.set("halfType", halfTime ? "Y" : "N");
@@ -516,9 +639,15 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
               dayArray.push({ DAY: r, DAY_STR: str });
             }
           });
-
           if (dayArray.length > 0) {
-            userArray.push({ USER_ID: v, dayArray: dayArray });
+            userArray.push({
+              USER_ID: v,
+              CLOSE_FLAG:
+                orgGrid1.find((orgV) => orgV?.["USER_ID"] === v)?.[
+                  "CLOSE_FLAG"
+                ] || "N",
+              dayArray: dayArray,
+            });
           }
         }
       });
@@ -541,14 +670,59 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       if (res.ok) {
         await searchClick();
       }
-    }, [changeGrid1Dt, date, halfTime, hrpatSelect, userTrmCode]);
+    }, [changeGrid1Dt, date, halfTime, hrpatSelect, userTrmCode, orgGrid1]);
+
+    const getExcel = useCallback(async () => {
+      const ret = await getApi<string>({
+        baseUrl: "INFRA",
+        method: "GET",
+        url: `/work/getExWorkSch?teamCode=${hrpatSelect}&date=${date}`,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+
+      if (ret.ok) {
+        if (ret.data) {
+          const base64 = ret.data;
+
+          const byteCharacters = atob(base64);
+
+          const byteNumbers = new Array(byteCharacters.length);
+
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+
+          const blob = new Blob([byteArray], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+
+          const a = document.createElement("a");
+
+          a.href = url;
+          a.download = `${dayjs().format("YYYY_MM_DD")}스케줄.xlsx`;
+
+          document.body.appendChild(a);
+
+          a.click();
+
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }, [hrpatSelect, date]);
 
     return (
       <div className="w-full h-full flex flex-col gap-3 py-[0.25%] pr-[0.5%]">
-        <div className="grid grid-cols-[0.45fr_0.55fr] gap-3 items-center justify-between">
+        <div className="grid grid-cols-[0.50fr_0.45fr] gap-3 items-center justify-between">
           {" "}
           <CommonContainer title="조회 및 버튼">
-            <div className="grid grid-cols-[0.3fr_0.3fr_0.25fr_0.15fr] items-center gap-3">
+            <div className="grid grid-cols-[0.25fr_0.25fr_0.1fr_0.25fr_0.15fr] items-center gap-3">
               <div className="mainInput">
                 {" "}
                 <CommonMonthDatePicker
@@ -578,6 +752,9 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                 />
               </div>
               <div className="mainInput">
+                <Btn txt="조회" type="SEARCH" onClick={() => searchClick()} />
+              </div>
+              <div className="mainInput">
                 <Btn
                   txt="엑셀 양식 다운로드"
                   type="PRINT"
@@ -586,16 +763,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                       sendErr("파트를 선택해주세요");
                       return;
                     }
-                    getExcelFile({
-                      dayLength: dayLength,
-                      yyyymm: date,
-                      holidayTotal: holidayArray.length,
-                      opcod: opcod,
-                      hrpat: hrpatOrigin,
-                      grid1: orgGrid1,
-                      grid1Dt: orgGrid1Dt,
-                      hrpatSelect: hrpatSelect,
-                    });
+                    getExcel();
                   }}
                 />
               </div>
@@ -644,7 +812,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         <CommonContainer
           title="근무표"
           childrenTitle={
-            <div className="grid grid-cols-[0.28fr_0.5fr] justify-between items-center gap-2 w-full px-[1%]">
+            <div className="grid grid-cols-[0.28fr_0.6fr] justify-between items-center gap-2 w-full px-[1%]">
               <div className="flex flex-col">
                 <div className="flex gap-3 items-center">
                   <span className="text-nowrap font-bold">
@@ -676,11 +844,13 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                   </div>
                 </div>
                 <div className="flex gap-3 items-center">
-                  <span className="text-nowrap font-bold">--- 최신 상태</span>
+                  <span className="text-nowrap font-bold">--- 상태</span>
                   {hrreq.map((hv, i) => {
                     return (
                       <div className="flex gap-2 items-center mainInput">
-                        <div className={`size-3 bg-[${HRREQ_HEADER[i]}]`}></div>
+                        <div
+                          className={`size-3`}
+                          style={{ backgroundColor: HRREQ_HEADER[i] }}></div>
                         <span className="text-nowrap">
                           {hv?.["CODE_NAME2"] || ""}
                         </span>
@@ -691,32 +861,36 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
               </div>
               <div className="flex gap-3">
                 {" "}
-                <div className="mainInput">
-                  <Btn
-                    txt="마감"
-                    type="CLOSE"
-                    onClick={() => setWorkM010_017()}
-                  />
-                </div>
-                <div className="mainInput w-[30%]">
-                  <CommonInput
-                    id="approveDay"
-                    value={approveDay.toString()}
-                    label="확정일"
-                    onChange={(v) => setApproveDay(getInt(v))}
-                    labelW="40%"
-                  />
-                </div>
-                <div className="mainInput">
-                  <Btn
-                    txt="확정"
-                    type="NONE"
-                    onClick={() => {
-                      approveClick();
-                    }}
-                  />
-                </div>
-                <div />
+                {btnAuth && (
+                  <>
+                    <div className="mainInput">
+                      <Btn
+                        txt="마감"
+                        type="CLOSE"
+                        onClick={() => setWorkM010_017()}
+                      />
+                    </div>
+                    <div className="mainInput w-[30%]">
+                      <CommonInput
+                        id="approveDay"
+                        value={approveDay.toString()}
+                        label="확정일"
+                        onChange={(v) => setApproveDay(getInt(v))}
+                        labelW="40%"
+                      />
+                    </div>
+                    <div className="mainInput">
+                      <Btn
+                        txt="확정"
+                        type="NONE"
+                        onClick={() => {
+                          approveClick();
+                        }}
+                      />
+                    </div>
+                    <div />
+                  </>
+                )}
                 <div className="mainInput">
                   <Btn txt="저장" type="SAVE" onClick={() => saveClick()} />
                 </div>
@@ -751,7 +925,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
             <div
               className={`sticky top-0 z-10 grid items-center border-b-2 border-x-2 border-slate-200 py-[0.1%] h-[3rem] bg-[#1F2A44] rounded-t-md shadow-xs`}
               style={{
-                gridTemplateColumns: `50px 50px 140px repeat(${dayLength},80px) 45px 80px 60px 60px 60px 60px`,
+                gridTemplateColumns: `50px 50px 140px repeat(${dayLength},80px) 50px 80px 60px 60px 60px 60px`,
                 width: "max-content",
                 minWidth: "100%",
               }}>
@@ -861,7 +1035,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                     key={i}
                     className={`grid items-center border-b-2 border-slate-500 ${i % 2 === 0 ? "bg-[#EEF3F8]" : "bg-[#D6E6F0]"} duration-300 origin-top h-[4.5rem] `}
                     style={{
-                      gridTemplateColumns: `50px 50px 140px repeat(${dayLength},80px) 45px 80px 60px 60px 60px 60px`,
+                      gridTemplateColumns: `50px 50px 140px repeat(${dayLength},80px) 50px 80px 60px 60px 60px 60px`,
                       width: "max-content",
                       minWidth: "100%",
                     }}>
@@ -934,8 +1108,12 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                       (_, idx) => {
                         return (
                           <div
-                            className={`flex flex-col h-full items-center justify-center px-[5%] gap-y-1`}
-                            key={`${i}${idx}`}>
+                            className={`flex flex-col h-full items-center justify-center px-[5%] gap-y-1 cursor-pointer rounded-md hover:bg-gray-300`}
+                            key={`${i}${idx}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              workBtnClick(e, "BTN", i, idx, 0);
+                            }}>
                             <div className="flex w-full items-center justify-center gap-x-1">
                               <div
                                 className={`w-[10%] rounded-md border-2 ${
@@ -1029,6 +1207,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                               } rounded-md border border-gray-300 px-3 py-1
               focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500`}
                               onClick={(e) => {
+                                e.stopPropagation();
                                 workBtnClick(e, "INPUT", i, idx, 0);
                               }}>
                               <input
@@ -1079,21 +1258,6 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                         className="mainInput w-[80%]"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (v["TIME_COUNT"] > 0) {
-                            const res = getMenu("WORK040");
-                            if (res) {
-                              dispatch(
-                                selectNav({
-                                  ...res,
-                                  param: {
-                                    DATE: date,
-                                    DEPT_CODE: hrpatSelect,
-                                    USER_NAME: v["USER_NAME"],
-                                  },
-                                }),
-                              );
-                            }
-                          }
                         }}>
                         <CommonInput
                           id={`time${i}`}
@@ -1294,8 +1458,87 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                   return true;
                 }}
                 width="350px"
-                filterFlag="VALUE5_CHAR;VALUE2_CHAR;VALUE3_CHAR"
+                filterFlag="CODE_NAME;VALUE2_CHAR;VALUE3_CHAR"
               />
+            </div>,
+            document.body,
+          )}
+        {detail.x !== 0 &&
+          detail.y !== 0 &&
+          createPortal(
+            <div
+              className={`fixed z-[999] bg-white w-fit duration-300 ${detail.yPos === "TOP" ? "origin-bottom" : "origin-top"} ${detailOpen ? " scale-y-100" : "scale-y-0"}`}
+              style={{ top: detail.y, left: detail.x }}
+              ref={detailTbRef}>
+              <CommonContainer title="세부사항" width="100%">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                  <div />
+                  <div className="mainInput">
+                    <CommonInput
+                      id="detailWork"
+                      label="다음 근무"
+                      value={detail.row?.[1]?.["WORK_NAME"] || ""}
+                      read={true}
+                    />
+                  </div>
+                  <div className="mainInput">
+                    <CommonInput
+                      id="detailOt"
+                      label="현재 OT"
+                      value={detail.row?.[0]?.["ADD_WORK_HOUR"] || "0"}
+                      read={true}
+                    />
+                  </div>
+                  <div className="mainInput">
+                    <CommonInput
+                      id="detailOt2"
+                      label="다음 OT"
+                      value={detail.row?.[1]?.["ADD_WORK_HOUR"] || "0"}
+                      read={true}
+                    />
+                  </div>
+                  <div className="mainInput">
+                    <CommonInput
+                      id="detailTrm"
+                      label="현재 임시 터미널"
+                      value={detail.row?.[0]?.["WORK_TERMINAL_CODE"] || ""}
+                      read={true}
+                    />
+                  </div>
+                  <div className="mainInput">
+                    <CommonInput
+                      id="detailTrm2"
+                      label="다음 임시 터미널"
+                      value={detail.row?.[1]?.["WORK_TERMINAL_CODE"] || ""}
+                      read={true}
+                    />
+                  </div>
+                  <div className="mainInput">
+                    <CommonInput
+                      id="detailTime"
+                      label="현재 시간 외"
+                      value={
+                        (detail.row?.[0]?.["REQ_START_TIME"] || "0000") +
+                        " ~ " +
+                        (detail.row?.[0]?.["REQ_END_TIME"] || "0000")
+                      }
+                      read={true}
+                    />
+                  </div>
+                  <div className="mainInput">
+                    <CommonInput
+                      id="detailTime2"
+                      label="다음 시간 외"
+                      value={
+                        (detail.row?.[1]?.["REQ_START_TIME"] || "0000") +
+                        " ~ " +
+                        (detail.row?.[1]?.["REQ_END_TIME"] || "0000")
+                      }
+                      read={true}
+                    />
+                  </div>
+                </div>
+              </CommonContainer>
             </div>,
             document.body,
           )}

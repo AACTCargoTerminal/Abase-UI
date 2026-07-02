@@ -1,32 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
-import type {
-  ModalComp,
-  TableHeaderType,
-  TableRow,
-  ToggleType,
-} from "../../Util/Type";
+import type { ModalComp, TableHeaderType, TableRow } from "../../Util/Type";
 import {
   confirmObj,
   convDateAndTime,
   getApi,
-  getClass,
-  getDiffDays,
   getInt,
   sendErr,
   sendLoading,
 } from "../../Util/Util";
-import { CommonDatePicker, CommonDropDown } from "../../comp/DropDown";
 import { CommonInput, TimeInput } from "../../comp/Input";
 import dayjs from "dayjs";
-import customParseFormat from "dayjs/plugin/customParseFormat";
-import { signAsync } from "../../signService";
-import { useSelector } from "react-redux";
-import type { RootState } from "../../slices/store";
-
-dayjs.extend(customParseFormat);
-
+import { CommonDatePicker, CommonDropDown } from "../../comp/DropDown";
 const HEADER: TableHeaderType[] = [{ key: "SEQ", value: "", w: "5rem" }];
-export default function WorkTimeInsert({
+export default function WorkTimeAdmInsert({
   pgmId,
   param,
   onClose,
@@ -50,30 +36,6 @@ export default function WorkTimeInsert({
       onClose();
     }
   }, [param]);
-
-  const teamCode = useSelector(
-    (state: RootState) =>
-      state.user.userInfo?.relArray?.find(
-        (v) => v?.["CLASS_CODE"] === "HRPAT",
-      )?.["CODE_CODE"] || "",
-  );
-
-  useEffect(() => {
-    getClass("HRPAT", pgmId)
-      .then((v) => {
-        const tmp = v.find((tv) => tv?.["CODE_CODE"] === teamCode);
-        if (tmp) {
-          if (tmp?.["VALUE1_NUMBER"] === 1) {
-            setManualFlag(true);
-            return;
-          }
-        }
-        setManualFlag(false);
-      })
-      .catch((v) => setManualFlag(false));
-  }, []);
-
-  const [manualFlag, setManualFlag] = useState<boolean>(false);
 
   const [params, setParams] = useState<{
     date: string;
@@ -102,10 +64,10 @@ export default function WorkTimeInsert({
   }, [headerAction?.type]);
 
   useEffect(() => {
-    if (params?.date) {
+    if (params.userSid) {
       search();
     }
-  }, [params?.date]);
+  }, [params.userSid]);
 
   useEffect(() => {
     const tmpDt = dt?.find((v) => v?.["SEQ"] === params.selectDt);
@@ -136,14 +98,6 @@ export default function WorkTimeInsert({
     sendLoading(false);
     if (res.ok) {
       if (res.data?.[0]) {
-        const tmpDt = res.data?.[0]?.[0];
-        if (tmpDt) {
-          setParams({
-            date: params.date,
-            selectDt: tmpDt?.["SEQ"] === undefined ? -1 : tmpDt["SEQ"],
-            userSid: params.userSid,
-          });
-        }
         setDt(res.data[0]);
         return;
       }
@@ -151,27 +105,6 @@ export default function WorkTimeInsert({
       onClose?.();
     }
   }, [params]);
-
-  function floorTo30(hhmm: string) {
-    if (!hhmm || hhmm.length < 4) return null;
-
-    let hour = parseInt(hhmm.substring(0, 2), 10);
-    let minute = parseInt(hhmm.substring(2, 4), 10);
-
-    // 🔥 핵심 조건 (자바랑 동일)
-    if (minute >= 55 || minute < 25) {
-      minute = 0;
-    } else {
-      minute = 30;
-    }
-
-    // 24시 처리
-    if (hour === 24) {
-      hour = 0;
-    }
-
-    return `${String(hour).padStart(2, "0")}${String(minute).padStart(2, "0")}`;
-  }
 
   const saveClick = useCallback(async () => {
     const tmpDt = dt?.[params.selectDt];
@@ -188,18 +121,6 @@ export default function WorkTimeInsert({
 
     if (!remark) {
       sendErr("사유는 필수입력입니다.");
-      return;
-    }
-
-    if (!remark) {
-      sendErr("사유를 입력하여주세요.");
-      return;
-    }
-
-    const signRet = await signAsync({});
-
-    if (!signRet) {
-      sendErr("서명은 필수사항입니다.");
       return;
     }
 
@@ -220,9 +141,8 @@ export default function WorkTimeInsert({
     const res = await getApi<TableRow[]>({
       baseUrl: "INFRA",
       method: "POST",
-      url: `/work/setWorkM010_019`,
+      url: `/work/setWorkM010_038`,
       params: tmp,
-      files: [signRet],
       pgmId: pgmId,
       sucFlag: true,
     });
@@ -336,62 +256,58 @@ export default function WorkTimeInsert({
           />
         </div>
       </div>
-      {manualFlag && (
-        <>
-          <div className="mainInput">
-            {" "}
-            <CommonInput
-              id="addhour"
-              value={addhour.toString()}
-              onChange={(v) => {
-                const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
-                setAddhour(Math.ceil(Number(tmp) * 2) / 2.0);
-              }}
-              label="연장근무"
-              labelW="50%"
-            />
-          </div>
-          <div className="mainInput">
-            {" "}
-            <CommonInput
-              id="nightHour"
-              value={nighthour.toString()}
-              onChange={(v) => {
-                const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
-                setNighthour(Math.ceil(Number(tmp) * 2) / 2.0);
-              }}
-              label="야간근무"
-              labelW="50%"
-            />
-          </div>
-          <div className="mainInput">
-            {" "}
-            <CommonInput
-              id="holiHour"
-              value={holihour.toString()}
-              onChange={(v) => {
-                const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
-                setholihour(Math.ceil(Number(tmp) * 2) / 2.0);
-              }}
-              label="휴일근무"
-              labelW="50%"
-            />
-          </div>
-          <div className="mainInput">
-            {" "}
-            <CommonInput
-              id="holiAddHour"
-              value={holiAddHour.toString()}
-              onChange={(v) => {
-                const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
-                setHoliAddHour(Math.ceil(Number(tmp) * 2) / 2.0);
-              }}
-              label="휴일연장"
-              labelW="50%"
-            />
-          </div>
-        </>
-      )}
+      <div className="mainInput">
+        {" "}
+        <CommonInput
+          id="addhour"
+          value={addhour.toString()}
+          onChange={(v) => {
+            const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
+            setAddhour(Math.ceil(Number(tmp) * 2) / 2.0);
+          }}
+          label="연장근무"
+          labelW="50%"
+        />
+      </div>
+      <div className="mainInput">
+        {" "}
+        <CommonInput
+          id="nightHour"
+          value={nighthour.toString()}
+          onChange={(v) => {
+            const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
+            setNighthour(Math.ceil(Number(tmp) * 2) / 2.0);
+          }}
+          label="야간근무"
+          labelW="50%"
+        />
+      </div>
+      <div className="mainInput">
+        {" "}
+        <CommonInput
+          id="holiHour"
+          value={holihour.toString()}
+          onChange={(v) => {
+            const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
+            setholihour(Math.ceil(Number(tmp) * 2) / 2.0);
+          }}
+          label="휴일근무"
+          labelW="50%"
+        />
+      </div>
+      <div className="mainInput">
+        {" "}
+        <CommonInput
+          id="holiAddHour"
+          value={holiAddHour.toString()}
+          onChange={(v) => {
+            const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
+            setHoliAddHour(Math.ceil(Number(tmp) * 2) / 2.0);
+          }}
+          label="휴일연장"
+          labelW="50%"
+        />
+      </div>
       <div className="col-span-2">
         <div className="mainInput">
           {" "}
@@ -406,4 +322,65 @@ export default function WorkTimeInsert({
       </div>
     </div>
   );
+}
+
+function floorTo30(hhmm: string) {
+  if (!hhmm || hhmm.length < 4) return null;
+
+  let hour = parseInt(hhmm.substring(0, 2), 10);
+  let minute = parseInt(hhmm.substring(2, 4), 10);
+
+  // 🔥 핵심 조건 (자바랑 동일)
+  if (minute >= 55 || minute < 25) {
+    minute = 0;
+  } else {
+    minute = 30;
+  }
+
+  // 24시 처리
+  if (hour === 24) {
+    hour = 0;
+  }
+
+  return `${String(hour).padStart(2, "0")}${String(minute).padStart(2, "0")}`;
+}
+
+function getDiffDays(startDate: string, endDate: string): number {
+  const isValidDate = (dateStr: string): boolean => {
+    if (!/^\d{8}$/.test(dateStr)) {
+      return false;
+    }
+
+    const year = Number(dateStr.substring(0, 4));
+    const month = Number(dateStr.substring(4, 6));
+    const day = Number(dateStr.substring(6, 8));
+
+    const date = new Date(year, month - 1, day);
+
+    return (
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day
+    );
+  };
+
+  if (!isValidDate(startDate) || !isValidDate(endDate)) {
+    return -1;
+  }
+
+  const s = new Date(
+    Number(startDate.substring(0, 4)),
+    Number(startDate.substring(4, 6)) - 1,
+    Number(startDate.substring(6, 8)),
+  );
+
+  const e = new Date(
+    Number(endDate.substring(0, 4)),
+    Number(endDate.substring(4, 6)) - 1,
+    Number(endDate.substring(6, 8)),
+  );
+
+  const diff = Math.floor((e.getTime() - s.getTime()) / 86400000);
+
+  return diff < 0 ? -1 : diff;
 }

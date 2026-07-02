@@ -65,6 +65,7 @@ const userSlice = createSlice({
       } else {
         state.routeArray = tmp_array;
       }
+      state.modalRoute.flag = false;
     },
     clearAllUser() {
       return initialState;

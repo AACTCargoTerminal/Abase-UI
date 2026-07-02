@@ -35,6 +35,8 @@ export const ROUTE_INFRA_IMPORTERS = {
   INFRASYS040: () => import("./infraScreens/sys/CommonMgm"),
   INFRASYS050: () => import("./infraScreens/sys/CommonMgm"),
   INFRASYS060: () => import("./infraScreens/sys/CommonMgm"),
+  INFRASYS070: () => import("./infraScreens/sys/CommonMgm"),
+  INFRASYS080: () => import("./infraScreens/sys/CommonMgm"),
 } as const;
 
 export type RouteInfraKey = keyof typeof ROUTE_INFRA_IMPORTERS;
@@ -53,6 +55,8 @@ export const INFRA_ROUTE_MAP: Record<
   INFRASYS040: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS040),
   INFRASYS050: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS050),
   INFRASYS060: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS060),
+  INFRASYS070: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS070),
+  INFRASYS080: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS080),
 };
 
 export const MODAL_ROUTE_IMPORTERS = {
@@ -75,6 +79,8 @@ export const MODAL_ROUTE_IMPORTERS = {
   USERMODAL: () => import("./infraScreens/sys/UserModal"),
   USERRESMGM: () => import("./infraScreens/sys/UserResourceMgm"),
   WORK_TIME_INS: () => import("./infraScreens/work/WorkTimeInsert"),
+  WORK_HR_REQ_DENY: () => import("./infraScreens/work/WorkHrReqDeny"),
+  WORK_TIME_ADM_INS: () => import("./infraScreens/work/WorkTimeAdmInsert"),
 } as const;
 
 export type ModalRouteKey = keyof typeof MODAL_ROUTE_IMPORTERS;
@@ -102,6 +108,8 @@ export const MODAL_ROUTE_MAP: Record<
   USERMODAL: React.lazy(MODAL_ROUTE_IMPORTERS.USERMODAL),
   USERRESMGM: React.lazy(MODAL_ROUTE_IMPORTERS.USERRESMGM),
   WORK_TIME_INS: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_TIME_INS),
+  WORK_HR_REQ_DENY: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_HR_REQ_DENY),
+  WORK_TIME_ADM_INS: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_TIME_ADM_INS),
 };
 
 export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
@@ -167,6 +175,8 @@ export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
     { type: "DELETE", txt: "삭제", actionType: "MODAL" },
   ],
   WORK_TIME_INS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
+  WORK_HR_REQ_DENY: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
+  WORK_TIME_ADM_INS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
 };
 
 export const MODAL_SIZE_MAP: Record<
@@ -192,4 +202,6 @@ export const MODAL_SIZE_MAP: Record<
   USERMODAL: "lg",
   USERRESMGM: "lg",
   WORK_TIME_INS: "md",
+  WORK_HR_REQ_DENY: "md",
+  WORK_TIME_ADM_INS: "md",
 };

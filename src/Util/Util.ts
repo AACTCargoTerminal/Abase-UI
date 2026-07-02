@@ -384,9 +384,9 @@ export function sortTable({
   table: TableRow[];
   key: string;
 }): TableRow[] {
-  const tmp = table[0][key] || undefined;
-
-  if (tmp) {
+  const sample = table.find((row) => row[key] != null);
+  const tmp = sample?.[key];
+  if (tmp !== undefined) {
     if (typeof tmp === "number") {
       if (type === "ASC") {
         const sorted = [...table].sort((a, b) => a[key] - b[key]);
@@ -394,6 +394,16 @@ export function sortTable({
       } else {
         const sorted = [...table].sort((a, b) => b[key] - a[key]);
         return sorted;
+      }
+    } else if (typeof tmp === "boolean") {
+      if (type === "ASC") {
+        return [...table].sort((a, b) => {
+          return Number(a[key] ?? false) - Number(b[key] ?? false);
+        });
+      } else {
+        return [...table].sort((a, b) => {
+          return Number(b[key] ?? false) - Number(a[key] ?? false);
+        });
       }
     } else {
       if (type === "ASC") {
@@ -884,6 +894,7 @@ export function convDateAndTime(type: "DATE" | "TIME", v: string) {
 export async function getClass(
   classCode: string,
   pgmId: string,
+  emptyFlag?: boolean,
 ): Promise<TableRow[]> {
   const res = await getApi<TableRow[]>({
     baseUrl: "SYS",
@@ -894,6 +905,9 @@ export async function getClass(
 
   if (res.ok) {
     if (res.data) {
+      if (emptyFlag !== undefined && emptyFlag) {
+        return [{ CODE_CODE: "", CODE_NAME: "-" }, ...res.data];
+      }
       return res.data;
     }
   }
@@ -920,4 +934,44 @@ export async function getClassValue(
     }
   }
   return [];
+}
+
+export function getDiffDays(startDate: string, endDate: string): number {
+  const isValidDate = (dateStr: string): boolean => {
+    if (!/^\d{8}$/.test(dateStr)) {
+      return false;
+    }
+
+    const year = Number(dateStr.substring(0, 4));
+    const month = Number(dateStr.substring(4, 6));
+    const day = Number(dateStr.substring(6, 8));
+
+    const date = new Date(year, month - 1, day);
+
+    return (
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day
+    );
+  };
+
+  if (!isValidDate(startDate) || !isValidDate(endDate)) {
+    return -1;
+  }
+
+  const s = new Date(
+    Number(startDate.substring(0, 4)),
+    Number(startDate.substring(4, 6)) - 1,
+    Number(startDate.substring(6, 8)),
+  );
+
+  const e = new Date(
+    Number(endDate.substring(0, 4)),
+    Number(endDate.substring(4, 6)) - 1,
+    Number(endDate.substring(6, 8)),
+  );
+
+  const diff = Math.floor((e.getTime() - s.getTime()) / 86400000);
+
+  return diff < 0 ? -1 : diff;
 }

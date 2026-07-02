@@ -62,7 +62,7 @@ export const Error = () => {
 
     const timer = setTimeout(() => {
       dispatch(clearAllErr());
-    }, 3000);
+    }, 500);
 
     // 3) 컴포넌트 언마운트/rd 변할 때 타이머 정리
     return () => {
@@ -108,6 +108,8 @@ export const ErrorRow = ({
   visible,
   deviceType,
 }: ErrorToastProps) => {
+  const SHOW_DURATION = errFlag === "Y" ? 5000 : 1000;
+  const ANIMATION = 300;
   const dispatch = useDispatch();
 
   const errIcon = (errFlag: string) => {
@@ -138,7 +140,7 @@ export const ErrorRow = ({
 
       const bolTimer = setTimeout(() => {
         dispatch(changeVisible({ key: id, bol: true }));
-      }, 5000);
+      }, ANIMATION);
 
       return () => {
         clearTimeout(bolTimer);
@@ -146,7 +148,7 @@ export const ErrorRow = ({
     } else {
       const timer = setTimeout(() => {
         dispatch(delError(id));
-      }, 5000);
+      }, SHOW_DURATION);
 
       return () => {
         clearTimeout(timer);
@@ -160,7 +162,7 @@ export const ErrorRow = ({
         id={id}
         className={`${errBg(errFlag)}
     ${deviceType === "PC" ? "max-w-[30vw]" : "max-w-[100vw]"} z-[100] rounded px-4 py-2 flex min-w-[100px] w-fit items-center duration-300 ${
-      visible ? "opacity-0 -translate-y-2" : "opacity-100"
+      visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
     }`}
         onClick={(e) => {
           e.stopPropagation();

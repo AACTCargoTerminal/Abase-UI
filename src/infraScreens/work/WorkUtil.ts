@@ -1,9 +1,12 @@
 import * as XLSX from "xlsx-js-style";
 import { saveAs } from "file-saver";
-import { getInt, sendErr } from "../../Util/Util";
+import { getDiffDays, getInt, sendErr } from "../../Util/Util";
 import dayjs from "dayjs";
 import type { TableRow } from "../../Util/Type";
 import moment from "moment";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+
+dayjs.extend(customParseFormat);
 const thin = { style: "thin", color: { rgb: "000000" } };
 const thick = { style: "medium", color: { rgb: "000000" } };
 
@@ -13,11 +16,13 @@ export const setExcelFile = ({
   yyyymm,
   dayLength,
   halfType,
+  grid1,
 }: {
   e: React.ChangeEvent<HTMLInputElement>;
   yyyymm: string;
   dayLength: number;
   halfType: string;
+  grid1: TableRow[];
 }): Promise<Map<string, any> | null> => {
   return new Promise((resolve) => {
     const file = e.target.files?.[0];
@@ -104,6 +109,8 @@ export const setExcelFile = ({
           if (!userId) {
             continue;
           }
+          const closeFlag =
+            grid1.find((v) => v?.["USER_ID"] === userId)?.["CLOSE_FLAG"] ?? "N";
 
           const dayArray: TableRow[] = [];
           let rowErrorMsg = "";
@@ -128,6 +135,7 @@ export const setExcelFile = ({
 
           result.get("userArray").push({
             USER_ID: userId,
+            CLOSE_FLAG: closeFlag,
             dayArray,
           });
         }
@@ -2318,3 +2326,165 @@ export function getMainExcel({
   ws["!viewPane"] = { showGridLines: false };
   return ws;
 }
+
+//시간외근무파일 일괄 업로드
+export const setTimeExcelFile = ({
+  e,
+}: {
+  e: React.ChangeEvent<HTMLInputElement>;
+}): Promise<Map<string, any> | null> => {
+  return new Promise((resolve) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      sendErr(`파일이 없습니다.`);
+      resolve(null);
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (evt) => {
+      try {
+        const data = evt.target?.result;
+        if (!data) {
+          sendErr("데이터가 없습니다.");
+          resolve(null);
+          return;
+        }
+
+        const workbook = XLSX.read(data, { type: "array" });
+        const findObj = workbook.SheetNames.find((wv) => wv === "FORM2");
+
+        if (!findObj) {
+          sendErr(`FORM2의 시트가 없습니다.`);
+          resolve(null);
+          return;
+        }
+
+        const ws = workbook.Sheets[findObj];
+        let msg = "";
+
+        const rows = XLSX.utils.sheet_to_json<any[]>(ws, {
+          header: 1,
+          defval: "",
+          range: 1,
+        });
+
+        const rowsFilter = rows.filter((row) => {
+          return row[1] !== "" && row[3] !== "";
+        });
+
+        for (let i = 0; i < rowsFilter.length; i++) {
+          const row = rowsFilter[i];
+
+          const startDate = String(row[1]).trim();
+          const userId = String(row[3]).trim();
+          const startTime = String(row[4]).trim();
+          const endDate = String(row[5]).trim();
+          const endTime = String(row[6]).trim();
+          const remark = String(row[7]).trim();
+
+          // 1. 숫자 8자리인지
+          if (!/^\d{8}$/.test(startDate)) {
+            throw new Error(
+              `${i + 10}행 : 시작일은 YYYYMMDD 형식의 숫자여야 합니다. (${startDate})`,
+            );
+          }
+
+          // 2. 실제 날짜인지
+          if (!dayjs(startDate, "YYYYMMDD", true).isValid()) {
+            throw new Error(
+              `${i + 10}행 : 존재하지 않는 날짜입니다. (${startDate})`,
+            );
+          }
+
+          // 1. 숫자 8자리인지
+          if (!/^\d{8}$/.test(endDate)) {
+            throw new Error(
+              `${i + 10}행 : 종료일은 YYYYMMDD 형식의 숫자여야 합니다. (${endDate})`,
+            );
+          }
+
+          // 2. 실제 날짜인지
+          if (!dayjs(endDate, "YYYYMMDD", true).isValid()) {
+            throw new Error(
+              `${i + 10}행 : 존재하지 않는 날짜입니다. (${endDate})`,
+            );
+          }
+
+          if (!userId.startsWith("AT")) {
+            throw new Error(
+              `${i + 10}행 : 사번은 AT로 시작해야 합니다. (${userId})`,
+            );
+          }
+
+          if (!/^\d{4}$/.test(startTime)) {
+            throw new Error(
+              `${i + 10}행 : 시작시간은 HHmm 형식의 숫자여야 합니다. (${startTime})`,
+            );
+          }
+
+          // 2. 실제 시간인지 (00:00 ~ 23:59)
+          if (!dayjs(startTime, "HHmm", true).isValid()) {
+            throw new Error(
+              `${i + 10}행 : 존재하지 않는 시간입니다. (${startTime})`,
+            );
+          }
+          if (!/^\d{4}$/.test(endTime)) {
+            throw new Error(
+              `${i + 10}행 : 종료시간은 HHmm 형식의 숫자여야 합니다. (${endTime})`,
+            );
+          }
+
+          // 2. 실제 시간인지 (00:00 ~ 23:59)
+          if (!dayjs(endTime, "HHmm", true).isValid()) {
+            throw new Error(
+              `${i + 10}행 : 존재하지 않는 시간입니다. (${endTime})`,
+            );
+          }
+
+          if (remark.length === 0) {
+            throw new Error(`${i + 10}행 : 사유는 필수입니다.`);
+          }
+
+          const diff = getDiffDays(startDate, endDate);
+
+          if (diff > 1 || diff < 0) {
+            throw new Error(`${i + 10}행 : 날짜 차이가 너무 큽니다.`);
+          }
+        }
+
+        const ret = rowsFilter.map((v) => ({
+          reqStartDate: v[1],
+          userId: v[3],
+          addDay: getDiffDays(v[1], v[5]),
+          reqStartTime: v[4],
+          reqEndTime: v[6],
+          remark: v[7],
+        }));
+
+        if (ret.length === 0) {
+          throw new Error(`빈데이터입니다.`);
+        }
+
+        const map = new Map<string, any>();
+        map.set("OT", ret);
+
+        resolve(map);
+      } catch (err: any) {
+        sendErr(err?.message || String(err));
+        resolve(null);
+      } finally {
+        e.target.value = "";
+      }
+    };
+
+    reader.onerror = () => {
+      sendErr("엑셀 파일을 읽는 중 오류가 발생했습니다.");
+      e.target.value = "";
+      resolve(null);
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+};

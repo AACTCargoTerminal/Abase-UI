@@ -6,9 +6,15 @@ import {
   type TableHeaderType,
   type TableHandle,
 } from "../../Util/Type";
-import { CommonContainer } from "../../comp/Container";
+import { CommonContainer, CommonTab } from "../../comp/Container";
 import { CommonChk, CommonInput } from "../../comp/Input";
-import { getApi, getClassValue, sendErr, sendLoading } from "../../Util/Util";
+import {
+  getApi,
+  getClass,
+  getClassValue,
+  sendErr,
+  sendLoading,
+} from "../../Util/Util";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../slices/store";
 import {
@@ -20,6 +26,7 @@ import { commonHeader2 } from "../../Util/Header";
 import dayjs from "dayjs";
 import { Btn } from "../../comp/Btn";
 import { TableCust2 } from "../../comp/Table";
+import { setTimeExcelFile } from "./WorkUtil";
 
 const GRID1_HEADER: TableHeaderType[] = [
   { key: "CHK", value: "", w: "3rem" },
@@ -31,50 +38,100 @@ const GRID1_HEADER: TableHeaderType[] = [
   { key: "CAPS_END_TIME", value: "캡스종료시간", w: "5rem" },
   { key: "REQ_START_TIME", value: "근무시작시간", w: "5rem" },
   { key: "REQ_END_TIME", value: "근무종료시간", w: "5rem" },
-  { key: "ADD_WORK_HOUR", value: "연장근무시간", w: "5rem" },
-  { key: "NIGHT_WORK_HOUR", value: "야간근무시간", w: "5rem" },
-  { key: "HOLIDAY_WORK_HOUR", value: "휴일근무시간", w: "5rem" },
+  {
+    key: "ADD_WORK_HOUR",
+    value: "연장근무시간",
+    w: "5rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
+  {
+    key: "NIGHT_WORK_HOUR",
+    value: "야간근무시간",
+    w: "5rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
+  {
+    key: "HOLIDAY_WORK_HOUR",
+    value: "휴일근무시간",
+    w: "5rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
+  {
+    key: "HOLIDAY_ADD_HOUR",
+    value: "휴일연장근무",
+    w: "5rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
   { key: "REMARK", value: "사유", w: "15rem" },
   { key: "APPROVE_ID", value: "확정ID", w: "7rem" },
   { key: "APPROVE_TIME", value: "확정시간", w: "8rem" },
   { key: "SIGN_FLAG", value: "서명유무", w: "4rem" },
 ];
 
-const FILTER_DATA: TableRow[] = [
-  { CODE_CODE: "", CODE_NAME: "ALL" },
-  { CODE_CODE: "Y", CODE_NAME: "예" },
-  { CODE_CODE: "N", CODE_NAME: "아니오" },
+const GRID1_HEADER_1: TableHeaderType[] = [
+  { key: "CHK", value: "", w: "3rem" },
+  { key: "TIME_DATE", value: "일자", w: "7rem", sum: 0 },
+  { key: "USER_NAME", value: "성명", w: "5rem" },
+  {
+    key: "ADD_WORK_HOUR",
+    value: "연장근무시간",
+    w: "5rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
+  {
+    key: "NIGHT_WORK_HOUR",
+    value: "야간근무시간",
+    w: "5rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
+  {
+    key: "HOLIDAY_WORK_HOUR",
+    value: "휴일근무시간",
+    w: "5rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
+  {
+    key: "HOLIDAY_ADD_HOUR",
+    value: "휴일연장근무",
+    w: "5rem",
+    sum: 1,
+    type: "DOUBLE",
+  },
 ];
+
+const FILTER_TAB: string[] = ["보류", "신청완료", "확정", "인사팀요청", "합계"];
 
 const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
   ({ outParam, param, pgmId, deviceType }, ref) => {
-    useEffect(() => {
-      if (param?.["DATE"] && param?.["DEPT_CODE"] && param?.["USER_NAME"]) {
-        setHrpatSelect(param["DEPT_CODE"]);
-        setDate2(param["DATE"]);
-        setName2(param["USER_NAME"]);
-        setFlag(false);
-        searchClick({
-          dateValue: param["DATE"],
-          deptCodeValue: param["DEPT_CODE"],
-          usernameValue: param["USER_NAME"],
-        });
-      }
-    }, [param]);
-
     const userId = useSelector((s: RootState) => s.user.userInfo?.userId || "");
     const [hrpat, setHrpat] = useState<TableRow[]>([]);
-    const [hrpatSelect, setHrpatSelect] = useState("");
+    const [hrpatSelect, setHrpatSelect] = useState<TableRow>({});
     useEffect(() => {
       if (userId) {
-        getClassValue("Value3", "HRPAT", userId, pgmId).then((v) => {
-          setHrpat(v);
-          if (v.length === 0) {
-            sendErr("권한이 없습니다.");
-          } else {
-            setHrpatSelect(v[0]["CODE_CODE"]);
-          }
-        });
+        getClass("HRPAT", pgmId)
+          .then((v) => {
+            const filterTmp = v.filter(
+              (ft) =>
+                ft["VALUE6_CHAR"] === userId ||
+                ft["VALUE3_CHAR"] === userId ||
+                ft["VALUE4_CHAR"] === userId ||
+                ft["VALUE5_CHAR"] === userId,
+            );
+            setHrpat(filterTmp);
+            if (filterTmp.length > 0) {
+              setHrpatSelect(filterTmp[0]);
+            } else {
+              setHrpatSelect({});
+            }
+          })
+          .catch((r) => setHrpat([]));
       }
     }, [userId]);
     const [flag, setFlag] = useState(true);
@@ -82,7 +139,7 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
     const [date2, setDate2] = useState(dayjs().format("YYYYMM"));
     const [name, setName] = useState("");
     const [name2, setName2] = useState("");
-    const [aprFlag, setAprFlag] = useState("");
+    const [selectTab, setSelectTab] = useState(0);
 
     const [grid1, setGrid1] = useState<TableRow[]>([]);
     const grid1Ref = useRef<TableHandle | null>(null);
@@ -103,14 +160,25 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
 
         const finalDate = dateValue ?? tmpDate;
         const finalUsername = usernameValue ?? username;
-        const finalDeptCode = deptCodeValue ?? hrpatSelect;
-        const finalAprroveFlag = approveFlag ?? aprFlag;
+        const finalDeptCode =
+          deptCodeValue ?? (hrpatSelect?.["CODE_CODE"] || "");
+        const finalArr =
+          approveFlag ??
+          (selectTab === 0
+            ? "J"
+            : selectTab === 1
+              ? "I"
+              : selectTab === 2
+                ? "A"
+                : selectTab === 3
+                  ? "Q"
+                  : "SUM");
 
         sendLoading(true);
         const res = await getApi<Record<number, TableRow[]>>({
           baseUrl: "INFRA",
           method: "GET",
-          url: `/work/getWorkM010_005?date=${finalDate}&deptCode=${finalDeptCode}&username=${finalUsername}&approveFlag=${finalAprroveFlag}`,
+          url: `/work/getWorkM010_005?date=${finalDate}&deptCode=${finalDeptCode}&username=${finalUsername}&approveFlag=${finalArr}`,
           pgmId,
           sucFlag: true,
         });
@@ -122,10 +190,47 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
         }
         setGrid1([]);
       },
-      [flag, date, date2, name, name2, hrpatSelect, aprFlag, pgmId],
+      [flag, date, date2, name, name2, hrpatSelect, pgmId, selectTab],
     );
 
     const approveClick = useCallback(async () => {
+      const tmp = grid1Ref.current?.getChk();
+      if (tmp && Object.values(tmp).length > 0) {
+        const tmpArray = Object.values(tmp).map((v) => {
+          return {
+            date: String(v["TIME_DATE"]).replaceAll("-", ""),
+            SEQ: v["SEQ"],
+            USER_SID: v["USER_SID"],
+            LOG_SEQ: v["LOG_SEQ"],
+          };
+        });
+        if (tmpArray.length === 0) {
+          sendErr("항목이 없습니다.");
+          return;
+        }
+        const map = new Map<string, any>();
+        map.set("DEL", tmpArray);
+        sendLoading(true);
+
+        const res = await getApi<Record<number, TableRow[]>>({
+          baseUrl: "INFRA",
+          method: "POST",
+          url: `/work/setWorkM010_031`,
+          params: map,
+          pgmId: pgmId,
+          sucFlag: true,
+        });
+
+        sendLoading(false);
+        if (res.ok) {
+          await searchClick();
+        }
+      } else {
+        sendErr("선택한 항목이 없습니다.");
+      }
+    }, [grid1Ref.current, flag, date, date2, name, name2, hrpatSelect]);
+
+    const delClick = useCallback(async () => {
       const tmp = grid1Ref.current?.getChk();
       if (tmp && Object.values(tmp).length > 0) {
         const tmpArray = Object.values(tmp).map((v) => {
@@ -146,7 +251,7 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
         const res = await getApi<Record<number, TableRow[]>>({
           baseUrl: "INFRA",
           method: "POST",
-          url: `/work/setWorkM010_031?approveFlag=Y`,
+          url: `/work/setWorkM010_022?adminFlag=Y`,
           params: map,
           pgmId: pgmId,
           sucFlag: true,
@@ -161,11 +266,79 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
       }
     }, [grid1Ref.current, flag, date, date2, name, name2, hrpatSelect]);
 
+    const getExcel = useCallback(async () => {
+      const ret = await getApi<string>({
+        baseUrl: "INFRA",
+        method: "GET",
+        url: `/work/getExTimeWork`,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+
+      if (ret.ok) {
+        if (ret.data) {
+          const base64 = ret.data;
+
+          const byteCharacters = atob(base64);
+
+          const byteNumbers = new Array(byteCharacters.length);
+
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+
+          const blob = new Blob([byteArray], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+
+          const a = document.createElement("a");
+          a.download = `${dayjs().format("YYYY_MM_DD")}시간외근무 일괄등록 양식.xlsx`;
+          a.href = url;
+
+          document.body.appendChild(a);
+
+          a.click();
+
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }, []);
+
+    const workTimeUpload = useCallback(
+      async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const ret = await setTimeExcelFile({ e: e });
+        if (ret) {
+          sendLoading(true);
+
+          const res = await getApi<Record<number, TableRow[]>>({
+            baseUrl: "INFRA",
+            method: "POST",
+            url: `/work/setWorkM010_039`,
+            params: ret,
+            pgmId: pgmId,
+            sucFlag: true,
+          });
+
+          sendLoading(false);
+          if (res.ok) {
+            await searchClick();
+          }
+        }
+      },
+      [hrpatSelect?.["CODE_CODE"], date, date2, selectTab, name, name2],
+    );
+
     return (
       <div className="px-[1%] flex flex-col gap-3">
-        <div className="grid grid-cols-[15%_25%_25%] gap-5">
+        <div className="grid grid-cols-[30%_25%_25%] gap-5">
           <CommonContainer title="부서">
-            <div className="grid grid-cols-[60%_30%] items-center gap-3">
+            <div className="grid grid-cols-[30%_15%_20%_20%] items-center gap-3">
               <div className="mainInput">
                 {" "}
                 <CommonDropDown
@@ -176,14 +349,41 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
                   inputKey={{
                     key: "CODE_CODE",
                     showKey: "0",
-                    value: hrpatSelect,
+                    value: hrpatSelect?.["CODE_CODE"] || "",
                   }}
-                  onClick={(r) => setHrpatSelect(r["CODE_CODE"])}
+                  onClick={(r) => setHrpatSelect(r)}
                 />
               </div>
               <div className="mainInput">
                 <Btn txt="조회" type="SEARCH" onClick={() => searchClick()} />
               </div>
+              {hrpatSelect?.["VALUE2_NUMBER"] > 0 && (
+                <>
+                  <div className="mainInput">
+                    <Btn
+                      txt="양식다운"
+                      type="EXCEL"
+                      onClick={() => getExcel()}
+                    />
+                  </div>
+                  <div className="mainInput">
+                    <Btn
+                      txt="일괄업로드"
+                      type="SAVE"
+                      onClick={() => {
+                        document.getElementById("groupUpload")?.click();
+                      }}
+                    />
+                    <input
+                      id="groupUpload"
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => workTimeUpload(e)}
+                      className="hidden"
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </CommonContainer>
           <CommonContainer
@@ -269,45 +469,145 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
             </div>
           </CommonContainer>
         </div>
-        <CommonContainer
-          title="신청서 리스트"
-          childrenTitle={
-            <div className="p-[1%] flex gap-3">
-              <div className="mainInput">
-                <Btn
-                  txt="확정"
-                  type="NONE"
-                  onClick={() => {
-                    approveClick();
-                  }}
-                />
+        <CommonTab
+          tabs={FILTER_TAB}
+          active={selectTab}
+          setActive={(v) => {
+            setSelectTab(v);
+            searchClick({
+              approveFlag:
+                v === 0
+                  ? "J"
+                  : v === 1
+                    ? "I"
+                    : v === 2
+                      ? "A"
+                      : v === 3
+                        ? "Q"
+                        : "SUM",
+            });
+          }}>
+          <CommonContainer
+            title="보류 리스트"
+            childrenTitle={
+              <div className="p-[1%] grid grid-cols-[100px] gap-3">
+                {(hrpatSelect?.["VALUE3_CHAR"] === userId ||
+                  hrpatSelect?.["VALUE4_CHAR"] === userId ||
+                  hrpatSelect?.["VALUE5_CHAR"] === userId) && (
+                  <div className="mainInput">
+                    <Btn
+                      txt="확정"
+                      type="NONE"
+                      onClick={() => {
+                        approveClick();
+                      }}
+                    />
+                  </div>
+                )}
               </div>
-              <div className="mainInput w-[40%]">
-                <CommonDropDown
-                  data={FILTER_DATA}
-                  dropHeight="10rem"
-                  header={commonHeader2}
-                  id="aprFlag"
-                  inputKey={{ key: "CODE_CODE", showKey: "0", value: aprFlag }}
-                  onClick={(r) => {
-                    setAprFlag(r["CODE_CODE"]);
-                    searchClick({ approveFlag: r["CODE_CODE"] });
-                  }}
-                  labelW="40%"
-                  title="확정 유무"
-                />
+            }>
+            <TableCust2
+              body={grid1}
+              header={GRID1_HEADER}
+              height="30rem"
+              width="100%"
+              batch={true}
+              ref={grid1Ref}
+            />
+          </CommonContainer>
+          <CommonContainer
+            title="완료 리스트"
+            childrenTitle={
+              <div className="p-[1%] grid grid-cols-[100px] gap-3">
+                {(hrpatSelect?.["VALUE3_CHAR"] === userId ||
+                  hrpatSelect?.["VALUE4_CHAR"] === userId ||
+                  hrpatSelect?.["VALUE5_CHAR"] === userId) && (
+                  <div className="mainInput">
+                    <Btn
+                      txt="확정"
+                      type="NONE"
+                      onClick={() => {
+                        approveClick();
+                      }}
+                    />
+                  </div>
+                )}
               </div>
-            </div>
-          }>
-          <TableCust2
-            body={grid1}
-            header={GRID1_HEADER}
-            height="30rem"
-            width="100%"
-            batch={true}
-            ref={grid1Ref}
-          />
-        </CommonContainer>
+            }>
+            <TableCust2
+              body={grid1}
+              header={GRID1_HEADER}
+              height="30rem"
+              width="100%"
+              batch={true}
+              ref={grid1Ref}
+            />
+          </CommonContainer>
+          <CommonContainer
+            title="확정 리스트"
+            childrenTitle={
+              <div className="p-[1%] grid grid-cols-[100px] gap-3">
+                {(hrpatSelect?.["VALUE3_CHAR"] === userId ||
+                  hrpatSelect?.["VALUE4_CHAR"] === userId ||
+                  hrpatSelect?.["VALUE5_CHAR"] === userId) && (
+                  <div className="mainInput">
+                    <Btn
+                      txt="삭제"
+                      type="DELETE"
+                      onClick={() => {
+                        delClick();
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            }>
+            <TableCust2
+              body={grid1}
+              header={GRID1_HEADER}
+              height="30rem"
+              width="100%"
+              batch={true}
+              ref={grid1Ref}
+            />
+          </CommonContainer>
+          <CommonContainer
+            title="요청 리스트"
+            childrenTitle={
+              <div className="p-[1%] grid grid-cols-[100px] gap-3">
+                {(hrpatSelect?.["VALUE3_CHAR"] === userId ||
+                  hrpatSelect?.["VALUE4_CHAR"] === userId ||
+                  hrpatSelect?.["VALUE5_CHAR"] === userId) && (
+                  <div className="mainInput">
+                    <Btn
+                      txt="삭제"
+                      type="DELETE"
+                      onClick={() => {
+                        delClick();
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            }>
+            <TableCust2
+              body={grid1}
+              header={GRID1_HEADER}
+              height="30rem"
+              width="100%"
+              batch={true}
+              ref={grid1Ref}
+            />
+          </CommonContainer>
+          <CommonContainer title="합계 리스트">
+            <TableCust2
+              body={grid1}
+              header={GRID1_HEADER_1}
+              height="30rem"
+              width="100%"
+            />
+          </CommonContainer>
+        </CommonTab>
       </div>
     );
   },

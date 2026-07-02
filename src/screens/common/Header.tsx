@@ -117,7 +117,7 @@ const Header = React.memo(
         const res = await getApi<UserInfoType>({
           baseUrl: "AUTH",
           method: "GET",
-          url: "/auth/verity",
+          url: "/user/verity",
           pgmId: "",
         });
         dispatch(changeServer(res.ok));
