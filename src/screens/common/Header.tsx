@@ -181,7 +181,7 @@ const Header = React.memo(
       const res = await getApi({
         baseUrl: "AUTH",
         method: "GET",
-        url: `/auth/logout`,
+        url: `/user/logout`,
         pgmId: "",
       });
 
