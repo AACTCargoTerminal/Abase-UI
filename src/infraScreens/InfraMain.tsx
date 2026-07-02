@@ -36,10 +36,7 @@ const InfraMain = () => {
         url: "/user/verity",
         pgmId: "",
       });
-      dispatch(changeServer(res.ok));
-      if (!res.ok) {
-        navigate("/Infra");
-      } else {
+      if (res.ok) {
         if (res.data) {
           dispatch(pushUserInfo(res.data));
         }

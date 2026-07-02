@@ -12,11 +12,13 @@ import { FaRegCheckCircle } from "react-icons/fa";
 import { RiLoginBoxLine } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import type { UserInfoType } from "../Util/Type";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { clearAllErr } from "../slices/err";
-import { clearAllUser } from "../slices/user";
+import { changeAutoFlag, clearAllUser } from "../slices/user";
+import type { RootState } from "../slices/store";
 
 const InfraLogin = () => {
+  const autoFlag = useSelector((state: RootState) => state.user.authCheck);
   const [id, setId] = useState(getCookie("USERID") || "");
   const [password, setPassword] = useState("");
   const [saveFlag, setSaveFlag] = useState(getCookie("USERID") ? true : false);
@@ -38,8 +40,10 @@ const InfraLogin = () => {
   }
 
   useEffect(() => {
-    check();
-  }, []);
+    if (!autoFlag) {
+      check();
+    }
+  }, [autoFlag]);
 
   useEffect(() => {
     dispatch(clearAllErr());
@@ -68,6 +72,7 @@ const InfraLogin = () => {
       sucFlag: true,
     });
     if (loginRes.ok) {
+      dispatch(changeAutoFlag(false));
       if (saveFlag) {
         setCookie("USERID", id, {
           days: 365,

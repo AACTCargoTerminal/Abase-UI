@@ -57,6 +57,9 @@ export const Error = () => {
   useEffect(() => {
     if (!err.rd) return;
 
+    const tmp = pathname.split("/");
+    navigate("/" + tmp[1]);
+
     const timer = setTimeout(() => {
       dispatch(clearAllErr());
     }, 500);
