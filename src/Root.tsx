@@ -23,7 +23,7 @@ const trmData: TableRow[] = [
   { CODE_CODE: "T3", CODE_NAME: "TERMINAL 3" },
 ];
 const serverData: TableRow[] = [
-  { CODE_CODE: "SAMS", CODE_NAME: "창고 관리 시스템" },
+  { CODE_CODE: "SAMS", CODE_NAME: "화물 관리 시스템" },
   { CODE_CODE: "INTRA", CODE_NAME: "사내 업무 시스템" },
 ];
 export default function Root() {
