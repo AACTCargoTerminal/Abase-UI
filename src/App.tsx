@@ -14,6 +14,7 @@ function App() {
           <Route path="/" element={<Root />} />
           <Route path="/sams/Main" element={<Main />} />
           <Route path="/intra/Main" element={<InfraMain />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Error />
         <Loading />
