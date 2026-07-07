@@ -90,7 +90,7 @@ const InfraHeader = React.memo(
       });
 
       if (res.ok) {
-        navigate("/Infra");
+        navigate("/");
       }
     }
     return (

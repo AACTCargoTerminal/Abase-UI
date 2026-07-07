@@ -183,7 +183,7 @@ const Header = React.memo(
       });
 
       if (res.ok) {
-        navigate("/Sams");
+        navigate("/");
       }
     }
     return (
