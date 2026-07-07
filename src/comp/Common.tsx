@@ -57,8 +57,7 @@ export const Error = () => {
   useEffect(() => {
     if (!err.rd) return;
 
-    const tmp = pathname.split("/");
-    navigate("/" + tmp[1]);
+    navigate("/");
 
     const timer = setTimeout(() => {
       dispatch(clearAllErr());
@@ -108,7 +107,7 @@ export const ErrorRow = ({
   visible,
   deviceType,
 }: ErrorToastProps) => {
-  const SHOW_DURATION = errFlag === "Y" ? 5000 : 1000;
+  const SHOW_DURATION = errFlag === "Y" ? 3000 : 1000;
   const ANIMATION = 300;
   const dispatch = useDispatch();
 
