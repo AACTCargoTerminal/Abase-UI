@@ -15,6 +15,7 @@ import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import {
   changeAutoFlag,
   changeServer,
+  clearAllUser,
   deleteNav,
   modalOpen,
   pushMenu,
@@ -187,6 +188,7 @@ const Header = React.memo(
       if (res.ok) {
         dispatch(changeAutoFlag(true));
         navigate("/");
+        dispatch(clearAllUser());
       }
     }
     return (

@@ -10,6 +10,7 @@ import type { RouteType, UserInfoType } from "../Util/Type";
 import {
   changeAutoFlag,
   changeServer,
+  clearAllUser,
   deleteNav,
   modalOpen,
   pushMenu,
@@ -93,6 +94,7 @@ const InfraHeader = React.memo(
       if (res.ok) {
         dispatch(changeAutoFlag(true));
         navigate("/");
+        dispatch(clearAllUser());
       }
     }
     return (
