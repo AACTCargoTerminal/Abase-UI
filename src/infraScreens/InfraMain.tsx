@@ -107,7 +107,6 @@ const InfraMain = () => {
       url: "/user/buildMenu",
       pgmId: "pgmId",
     });
-
     if (res.ok) {
       if (res.data) {
         if (Array.isArray(res.data[0])) {
