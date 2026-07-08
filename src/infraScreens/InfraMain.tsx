@@ -6,7 +6,12 @@ import InfraMobileHeader from "./InfraMobileHeader";
 import { getApi } from "../Util/Util";
 import type { UserInfoType } from "../Util/Type";
 import { useDispatch, useSelector } from "react-redux";
-import { changeServer, pushMenu, pushUserInfo } from "../slices/user";
+import {
+  changeAutoFlag,
+  changeServer,
+  pushMenu,
+  pushUserInfo,
+} from "../slices/user";
 import { useNavigate } from "react-router-dom";
 import { SignIO } from "../comp/Common";
 import type { RootState } from "../slices/store";
@@ -38,6 +43,7 @@ const InfraMain = () => {
       });
       if (res.ok) {
         if (res.data) {
+          dispatch(changeAutoFlag(false));
           dispatch(pushUserInfo(res.data));
         }
       }
