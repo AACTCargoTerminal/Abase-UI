@@ -99,6 +99,12 @@ export default function Root() {
       sendErr("시스템을 클릭해주세요.");
       return;
     }
+
+    if (selectTab["CODE_CODE"] === "SAMS") {
+      sendErr("화물 관리 시스템은 준비중입니다.");
+      return;
+    }
+
     param.set("username", formData.username);
     param.set("password", formData.password);
     param.set(
