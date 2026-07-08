@@ -12,7 +12,7 @@ import type { TableHeaderType, TableRow, UserInfoType } from "./Util/Type";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "./slices/store";
 import { useNavigate } from "react-router-dom";
-import { changeAutoFlag } from "./slices/user";
+import { changeAutoFlag, clearAllUser } from "./slices/user";
 import imgLogin from "./assets/images/loginImg.png";
 const header: TableHeaderType[] = [
   { key: "CODE_NAME", value: "코드명", w: "18.5rem", type: "STR" },
@@ -62,6 +62,7 @@ export default function Root() {
     });
     if (res.ok) {
       await logout();
+      dispatch(clearAllUser());
     } else {
       document.getElementById("loginId")?.focus();
     }
@@ -114,7 +115,6 @@ export default function Root() {
     });
     if (loginRes.ok) {
       navigate(`/${selectTab?.["CODE_CODE"].toLowerCase()}/Main`);
-      dispatch(changeAutoFlag(false));
     }
   };
 

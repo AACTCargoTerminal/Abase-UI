@@ -123,6 +123,7 @@ const Header = React.memo(
         });
         if (res.ok) {
           if (res.data) {
+            dispatch(changeAutoFlag(false));
             dispatch(pushUserInfo(res.data));
           }
         }
