@@ -186,9 +186,9 @@ const Header = React.memo(
       });
 
       if (res.ok) {
+        dispatch(clearAllUser());
         dispatch(changeAutoFlag(true));
         navigate("/");
-        dispatch(clearAllUser());
       }
     }
     return (
