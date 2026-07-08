@@ -195,6 +195,14 @@ export async function getApi<T>({
           );
 
           return { ok: false, data: null };
+        case 403:
+          store.dispatch(changeAutoFlag(true));
+          store.dispatch(
+            pushError({ id: uuidv4(), errFlag: "Y", errMsg: String(r.data) }),
+          );
+          store.dispatch(changeRd(true));
+
+          return { ok: false, data: null };
         case 401:
           store.dispatch(changeAutoFlag(true));
           store.dispatch(

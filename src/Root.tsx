@@ -113,8 +113,8 @@ export default function Root() {
       pgmId: "LOGIN",
     });
     if (loginRes.ok) {
-      dispatch(changeAutoFlag(false));
       navigate(`/${selectTab?.["CODE_CODE"].toLowerCase()}/Main`);
+      dispatch(changeAutoFlag(false));
     }
   };
 

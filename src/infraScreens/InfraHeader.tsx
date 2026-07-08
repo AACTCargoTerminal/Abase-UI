@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import type { RootState } from "../slices/store";
 import type { RouteType, UserInfoType } from "../Util/Type";
 import {
+  changeAutoFlag,
   changeServer,
   deleteNav,
   modalOpen,
@@ -90,6 +91,7 @@ const InfraHeader = React.memo(
       });
 
       if (res.ok) {
+        dispatch(changeAutoFlag(true));
         navigate("/");
       }
     }

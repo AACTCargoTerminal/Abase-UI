@@ -13,6 +13,7 @@ import { IoLogOutOutline } from "react-icons/io5";
 import type { RouteType, UserInfoType } from "../../Util/Type";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import {
+  changeAutoFlag,
   changeServer,
   deleteNav,
   modalOpen,
@@ -183,6 +184,7 @@ const Header = React.memo(
       });
 
       if (res.ok) {
+        dispatch(changeAutoFlag(true));
         navigate("/");
       }
     }
