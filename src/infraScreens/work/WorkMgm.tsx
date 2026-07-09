@@ -1178,9 +1178,9 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                               />
                               <div
                                 className={`w-[10%] rounded-md border-2 ${
-                                  !grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                  grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
                                     "HR_STATUS"
-                                  ]
+                                  ] === 0
                                     ? "border-transparent"
                                     : "border-[#14B8A6]"
                                 }`}
