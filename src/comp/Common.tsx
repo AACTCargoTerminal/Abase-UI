@@ -444,7 +444,7 @@ export function SignIO() {
   };
   if (!state.open) return null;
   return (
-    <div className="fixed top-[7%] left-0 w-full z-[999] max-w-[720px] rounded-xl bg-white p-4">
+    <div className="fixed top-[7%] left-1/2 -translate-x-1/2 z-[999] w-full max-w-[720px] rounded-xl bg-white p-4">
       <div className="mb-4 border-b pb-3">
         <div className="text-lg font-bold">전자서명</div>
         <div className="mt-1 text-sm text-gray-500">

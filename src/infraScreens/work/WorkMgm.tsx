@@ -846,7 +846,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                     <span className="text-nowrap">OT등록 여부</span>
                   </div>
                   <div className="flex gap-2 items-center mainInput">
-                    <div className="size-3 bg-[#14B8A6]"></div>
+                    <div className="size-3 bg-[#36004D]"></div>
                     <span className="text-nowrap">인사설정</span>
                   </div>
                 </div>
@@ -1182,7 +1182,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                                     "HR_STATUS"
                                   ] === 0
                                     ? "border-transparent"
-                                    : "border-[#14B8A6]"
+                                    : "border-[#36004D]"
                                 }`}
                               />
                             </div>

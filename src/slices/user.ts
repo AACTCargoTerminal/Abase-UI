@@ -42,6 +42,7 @@ const userSlice = createSlice({
       } else {
         state.routeArray.push(action.payload);
       }
+      state.modalRoute.flag = false;
     },
     clearParam(state) {
       if (state.route?.param) {
@@ -68,7 +69,14 @@ const userSlice = createSlice({
       }
       state.modalRoute.flag = false;
     },
-    clearAllUser() {
+    clearAllUser(state) {
+      return {
+        ...initialState,
+        route: state.route,
+        routeArray: state.routeArray,
+      };
+    },
+    clearAll(state) {
       return initialState;
     },
     pushUserInfo(state, action: PayloadAction<UserInfoType>) {
@@ -115,5 +123,6 @@ export const {
   pushModalFlag,
   modalOpen,
   changeAutoFlag,
+  clearAll,
 } = userSlice.actions;
 export default userSlice.reducer;
