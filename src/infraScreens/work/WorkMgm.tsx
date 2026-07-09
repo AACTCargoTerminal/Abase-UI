@@ -334,15 +334,16 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       }
     }, [username]);
 
-    async function searchClick() {
+    async function searchClick(teamCode?: string) {
       setChangeGrid1Dt({});
       setChkSelect({});
       setAllChk(false);
       sendLoading(true);
+      const code = teamCode ?? hrpatSelect;
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
-        url: `/work/getWorkM010_002?date=${date}&deptCode=${hrpatSelect}&approveFlag=`,
+        url: `/work/getWorkM010_002?date=${date}&deptCode=${code}&approveFlag=`,
         pgmId: pgmId,
       });
       sendLoading(false);
@@ -507,6 +508,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         sendLoading(false);
         return;
       }
+      setHrpatSelect(String(tmp.get("teamCode")));
 
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
@@ -517,7 +519,9 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         sucFlag: true,
       });
       sendLoading(false);
-      setHrpatSelect(String(tmp.get("teamCode")));
+      if (res.ok) {
+        await searchClick(String(tmp.get("teamCode")));
+      }
     }
 
     const setWorkM010_017 = useCallback(async () => {
