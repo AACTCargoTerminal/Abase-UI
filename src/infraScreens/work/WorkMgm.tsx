@@ -51,7 +51,6 @@ const HRREQ_HEADER = [
   "#6B7280",
   "#EF4444",
   "#8B5CF6",
-  "#14B8A6",
   "#6366F1",
 ];
 
@@ -846,6 +845,10 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                     <div className="size-3 bg-stone-500"></div>
                     <span className="text-nowrap">OT등록 여부</span>
                   </div>
+                  <div className="flex gap-2 items-center mainInput">
+                    <div className="size-3 bg-[#14B8A6]"></div>
+                    <span className="text-nowrap">인사설정</span>
+                  </div>
                 </div>
                 <div className="flex gap-3 items-center">
                   <span className="text-nowrap font-bold">--- 상태</span>
@@ -1171,6 +1174,15 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                                   ]
                                     ? "border-transparent"
                                     : "border-stone-500"
+                                }`}
+                              />
+                              <div
+                                className={`w-[10%] rounded-md border-2 ${
+                                  !grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                    "HR_STATUS"
+                                  ]
+                                    ? "border-transparent"
+                                    : "border-[#14B8A6]"
                                 }`}
                               />
                             </div>
