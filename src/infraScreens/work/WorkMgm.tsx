@@ -758,7 +758,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       <div className="w-full h-full flex flex-col gap-3 py-[0.25%] pr-[0.5%]">
         <div className="grid grid-cols-[3fr_2fr] gap-3 items-start">
           <CommonContainer title="조회 및 버튼" width="fit-content">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div className="flex flex-nowrap items-center gap-x-3 gap-y-2">
               <div className="mainInput basis-[15%] min-w-[190px] max-w-[220px]">
                 <CommonMonthDatePicker
                   id="date"
