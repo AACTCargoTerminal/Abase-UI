@@ -16,7 +16,7 @@ import type {
   ToggleType,
 } from "../../Util/Type";
 import { CommonContainer } from "../../comp/Container";
-import { getApi, getClassValue, openModal } from "../../Util/Util";
+import { getApi, getClass, getClassValue, openModal } from "../../Util/Util";
 import { CommonDropDown } from "../../comp/DropDown";
 import { commonHeader2 } from "../../Util/Header";
 import { CommonInput } from "../../comp/Input";
@@ -33,9 +33,13 @@ const GRID1_HEADER: TableHeaderType[] = [
   { key: "USER_ID", value: "사용자 ID", w: "8rem", sum: 0 },
   { key: "USER_NAME1", value: "공용 사용자명", w: "8rem" },
   { key: "USER_NAME2", value: "한글 사용자명", w: "8rem" },
-  { key: "COMPANY_NAME", value: "법인", w: "15rem" },
-  { key: "BRANCH_NAME", value: "지사", w: "15rem" },
-  { key: "DEPARTMENT_NAME", value: "부서", w: "15rem" },
+  { key: "JOIN_DAY", value: "입사일", w: "6rem" },
+  { key: "GROUP_JOIN_DAY", value: "그룹입사일", w: "6rem" },
+  { key: "TERMINAL_NAME", value: "근무지", w: "4rem" },
+  { key: "TEAM_NAME", value: "부서명", w: "8rem" },
+  { key: "LEADER_FLAG", value: "팀장권한", w: "10rem" },
+  { key: "DEP_LEADER_FLAG", value: "부팀장 권한", w: "10rem" },
+  { key: "MANAGER_FLAG", value: "담당자 권한", w: "10rem" },
 ];
 
 const UserMgm = forwardRef<PageHandle, DefInfraComp>(
@@ -48,9 +52,9 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
 
     const [grid1, setGrid1] = useState<TableRow[]>([]);
     async function getDPTCD() {
-      const data = await getClassValue("Value3", "DPTCD", "Y", pgmId);
+      const data = await getClass("HRPAT", pgmId, true);
       if (data) {
-        setDptcd([{ CODE_CODE: "", CODE_NAME: "-" }, ...data]);
+        setDptcd(data);
       }
     }
     useEffect(() => {

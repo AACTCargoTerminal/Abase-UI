@@ -37,6 +37,9 @@ export const ROUTE_INFRA_IMPORTERS = {
   INFRASYS060: () => import("./infraScreens/sys/CommonMgm"),
   INFRASYS070: () => import("./infraScreens/sys/CommonMgm"),
   INFRASYS080: () => import("./infraScreens/sys/CommonMgm"),
+  INFRASYS090: () => import("./infraScreens/sys/CommonMgm"),
+  INFRASYS100: () => import("./infraScreens/sys/CommonMgm"),
+  INFRASYS110: () => import("./infraScreens/sys/CommonMgm"),
 } as const;
 
 export type RouteInfraKey = keyof typeof ROUTE_INFRA_IMPORTERS;
@@ -57,6 +60,9 @@ export const INFRA_ROUTE_MAP: Record<
   INFRASYS060: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS060),
   INFRASYS070: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS070),
   INFRASYS080: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS080),
+  INFRASYS090: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS090),
+  INFRASYS100: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS100),
+  INFRASYS110: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS110),
 };
 
 export const MODAL_ROUTE_IMPORTERS = {
@@ -175,7 +181,7 @@ export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
     { type: "DELETE", txt: "삭제", actionType: "MODAL" },
   ],
   WORK_TIME_INS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
-  WORK_HR_REQ_DENY: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
+  WORK_HR_REQ_DENY: [{ type: "SAVE", txt: "저장", actionType: "ALL" }],
   WORK_TIME_ADM_INS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
 };
 

@@ -726,9 +726,11 @@ export function Calendar({ date, changeDate, type = "DAY" }: CalendarType) {
   const clamp = (v: number, min: number, max: number) =>
     Math.max(min, Math.min(max, v));
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!calOpen) return;
+
     calc();
-  }, []);
+  }, [calOpen]);
 
   const calc = () => {
     const anchor = anchorRef.current;
@@ -945,17 +947,16 @@ export function Calendar({ date, changeDate, type = "DAY" }: CalendarType) {
         <div
           ref={popupRef}
           className={`
-      fixed w-[280px] h-[290px] bg-white
-      border rounded-md border-[#ECECEC] shadow-md z-[9999]
-      transition-all duration-200
-      ${
-        calOpen
-          ? "opacity-100 scale-y-100"
-          : "opacity-0 scale-y-0 pointer-events-none"
-      }
-      ${dropDir === "top" ? "origin-bottom" : "origin-top"}
-      ${dropAlign === "right" ? "right-0 left-auto" : "left-0 right-auto"}
-    `}
+  fixed w-[280px] h-[290px] bg-white
+  border rounded-md border-[#ECECEC] shadow-md z-[9999]
+  transition-[opacity,transform] duration-200
+  ${
+    calOpen
+      ? "opacity-100 scale-y-100"
+      : "opacity-0 scale-y-0 pointer-events-none"
+  }
+  ${dropDir === "top" ? "origin-bottom" : "origin-top"}
+`}
           style={{
             top: pos.x,
             left: pos.y,

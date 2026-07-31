@@ -20,8 +20,8 @@ const GRID1_HEADER: TableHeaderType[] = [
   { key: "CHK", value: "", w: "3rem" },
   { key: "CLASS_NAME", value: "항목", w: "8rem", sum: 0 },
   { key: "CODE_NAME", value: "코드", w: "8rem" },
-  { key: "VALUE1", value: "", w: "8rem" },
-  { key: "VALUE2", value: "", w: "8rem" },
+  { key: "VALUE1_NAME", value: "", w: "8rem" },
+  { key: "VALUE2_NAME", value: "", w: "8rem" },
   { key: "VALUE3", value: "", w: "8rem" },
   { key: "VALUE4", value: "", w: "8rem" },
 ];
@@ -77,8 +77,11 @@ export default function UserResourceMgm({
   });
   const [hrwdtSelect, setHrwdtSelect] = useState<Record<string, TableRow>>({});
   const [hrdtsSelect, setHrdtsSelect] = useState<Record<string, TableRow>>({});
-  const [hrpatSelect, setHrpatSelect] = useState("");
+  const [hrpatSelect, setHrpatSelect] = useState<TableRow>({
+    VALUE1: dayjs().format("YYYYMMDD"),
+  });
   const [trmcdSelect, setTrmcdSelect] = useState("");
+  const [hrtauSelect, setHrtauSelect] = useState<TableRow>({});
   const [yesNo, setYesNo] = useState(0);
   const yesNoRef = useRef<boolean>(false);
 
@@ -92,6 +95,9 @@ export default function UserResourceMgm({
     getClass("OPCOD");
     getClass("HRPAT");
     getClass("TRMCD");
+    getClass("HRTAU");
+    getClass("POSTN");
+    getClass("HRMTR");
   }, []);
 
   useEffect(() => {
@@ -99,13 +105,21 @@ export default function UserResourceMgm({
       searchClick();
     }
   }, [yesNo]);
+  function clear() {
+    setHrcosSelect({});
+    setHrwktSelect({});
+    setHrwdtSelect({});
+    setHrdtsSelect({});
+    setHrpatSelect({
+      VALUE1: dayjs().format("YYYYMMDD"),
+    });
+    setTrmcdSelect("");
+    setHrtauSelect({});
+  }
 
   useEffect(() => {
     if (headerAction?.type === "신규") {
-      setHrcosSelect({});
-      setHrwktSelect({});
-      setHrwdtSelect({});
-      setHrdtsSelect({});
+      clear();
     }
     if (headerAction?.type === "저장") {
       saveClick();
@@ -138,10 +152,7 @@ export default function UserResourceMgm({
         sucFlag: true,
       });
       if (res.ok) {
-        setHrcosSelect({});
-        setHrwktSelect({});
-        setHrwdtSelect({});
-        setHrdtsSelect({});
+        clear();
       }
       await searchClick();
     },
@@ -207,13 +218,17 @@ export default function UserResourceMgm({
       }
     });
 
-    if (hrpatSelect) {
+    if (
+      Object.keys(hrpatSelect).length > 0 &&
+      hrpatSelect?.["CODE_CODE"] &&
+      hrpatSelect?.["VALUE1"]
+    ) {
       tableTmp.push({
         CLASS_CODE: "HRPAT",
         YYYY: "0000",
-        CODE_CODE: hrpatSelect,
+        CODE_CODE: hrpatSelect?.["CODE_CODE"],
         USER_SID: userSid,
-        VALUE1: "",
+        VALUE1: hrpatSelect?.["VALUE1"],
         VALUE2: "",
         VALUE3: "",
         VALUE4: "",
@@ -227,6 +242,24 @@ export default function UserResourceMgm({
         USER_SID: userSid,
         VALUE1: "",
         VALUE2: "",
+        VALUE3: "",
+        VALUE4: "",
+      });
+    }
+
+    if (Object.keys(hrtauSelect).length > 0 && hrtauSelect?.["CODE_CODE"]) {
+      if (!hrtauSelect?.["VALUE1"] || !hrtauSelect?.["VALUE2"]) {
+        sendErr("터미널 또는 직급이 없습니다.");
+        return;
+      }
+
+      tableTmp.push({
+        CLASS_CODE: "HRTAU",
+        YYYY: "0000",
+        CODE_CODE: hrtauSelect?.["CODE_CODE"] || "",
+        USER_SID: userSid,
+        VALUE1: hrtauSelect?.["VALUE1"] || "",
+        VALUE2: hrtauSelect?.["VALUE2"] || "",
         VALUE3: "",
         VALUE4: "",
       });
@@ -249,10 +282,7 @@ export default function UserResourceMgm({
     });
 
     if (res.ok) {
-      setHrcosSelect({});
-      setHrwktSelect({});
-      setHrwdtSelect({});
-      setHrdtsSelect({});
+      clear();
       searchClick();
     }
   }, [
@@ -263,6 +293,7 @@ export default function UserResourceMgm({
     userSid,
     hrpatSelect,
     trmcdSelect,
+    hrtauSelect,
   ]);
 
   async function getClass(classCode: string) {
@@ -428,7 +459,6 @@ export default function UserResourceMgm({
                 <DateInput
                   id={`hrwdt${v["CODE_CODE"]}${i}`}
                   onChange={(s) => {
-                    console.log(s);
                     setHrwdtSelect((prev) => ({
                       ...prev,
                       [v["CODE_CODE"]]: { [`VALUE${i + 1}`]: s },
@@ -468,6 +498,7 @@ export default function UserResourceMgm({
                         [v["CODE_CODE"]]: { CODE_CODE: t["CODE_CODE"] },
                       }));
                     }}
+                    find={true}
                   />
                 </div>
               )}
@@ -493,7 +524,7 @@ export default function UserResourceMgm({
             </div>
           );
         })}
-        <div className="mainInput">
+        <div className="mainInput col-span-2 grid grid-cols-[0.6fr_0.4fr] gap-3">
           {" "}
           <CommonDropDown
             title="부서"
@@ -501,26 +532,29 @@ export default function UserResourceMgm({
             dropHeight="15rem"
             header={commonHeader2}
             id="hrpat"
-            inputKey={{ key: "CODE_CODE", showKey: "0", value: hrpatSelect }}
-            onClick={(r) => {
-              setHrpatSelect(r["CODE_CODE"]);
+            inputKey={{
+              key: "CODE_CODE",
+              showKey: "0",
+              value: hrpatSelect?.["CODE_CODE"] || "",
             }}
+            onClick={(r) => {
+              setHrpatSelect((prev) => ({
+                ...prev,
+                CODE_CODE: r?.["CODE_CODE"] || "",
+              }));
+            }}
+            find={true}
+          />
+          <CommonDatePicker
+            id={`hrpatDate`}
+            onClick={(s) => {
+              setHrpatSelect((prev) => ({ ...prev, VALUE1: s }));
+            }}
+            arrowNo={false}
+            value={hrpatSelect?.["VALUE1"] || ""}
           />
         </div>
-        <div className="mainInput">
-          {" "}
-          <CommonDropDown
-            title="터미널"
-            data={classCode?.["TRMCD"] || []}
-            dropHeight="15rem"
-            header={commonHeader2}
-            id="trmcd"
-            inputKey={{ key: "CODE_CODE", showKey: "0", value: trmcdSelect }}
-            onClick={(r) => {
-              setTrmcdSelect(r["CODE_CODE"]);
-            }}
-          />
-        </div>
+
         <div className="mainInput flex gap-11">
           <CommonLabel id="usableFlag" label="사용여부" />
           <ToggleBtn
@@ -535,6 +569,70 @@ export default function UserResourceMgm({
             idx={yesNo}
           />
         </div>
+        <div />
+        <div className="mainInput">
+          {" "}
+          <CommonDropDown
+            title="근무 터미널"
+            data={classCode?.["TRMCD"] || []}
+            dropHeight="15rem"
+            header={commonHeader2}
+            id="trmcd"
+            inputKey={{ key: "CODE_CODE", showKey: "0", value: trmcdSelect }}
+            onClick={(r) => {
+              setTrmcdSelect(r["CODE_CODE"]);
+            }}
+            labelW="35%"
+          />
+        </div>
+        <div className="mainInput col-span-3 grid grid-cols-[0.5fr_0.2fr_0.2fr] gap-3">
+          {" "}
+          <CommonDropDown
+            title="HR 권한"
+            data={classCode?.["HRTAU"] || []}
+            dropHeight="15rem"
+            header={commonHeader2}
+            id="hrmtr"
+            inputKey={{
+              key: "CODE_CODE",
+              showKey: "0",
+              value: hrtauSelect?.["CODE_CODE"] || "",
+            }}
+            onClick={(r) => {
+              setHrtauSelect({ CODE_CODE: r["CODE_CODE"] });
+            }}
+            labelW="35%"
+            find={true}
+          />
+          <CommonDropDown
+            data={classCode?.["HRMTR"] || []}
+            dropHeight="15rem"
+            header={commonHeader2}
+            id="hrmtr"
+            inputKey={{
+              key: "CODE_CODE",
+              showKey: "0",
+              value: hrtauSelect?.["VALUE1"] || "",
+            }}
+            onClick={(r) => {
+              setHrtauSelect((prev) => ({ ...prev, VALUE1: r["CODE_CODE"] }));
+            }}
+          />
+          <CommonDropDown
+            data={classCode?.["POSTN"] || []}
+            dropHeight="15rem"
+            header={commonHeader2}
+            id="postn"
+            inputKey={{
+              key: "CODE_CODE",
+              showKey: "0",
+              value: hrtauSelect?.["VALUE2"] || "",
+            }}
+            onClick={(r) => {
+              setHrtauSelect((prev) => ({ ...prev, VALUE2: r["CODE_CODE"] }));
+            }}
+          />
+        </div>
       </div>
       <div>
         <TableCust2
@@ -547,26 +645,19 @@ export default function UserResourceMgm({
           onClick={async (r) => {
             const tmp = r["CLASS_CODE"];
             if (tmp === "HRCOS") {
+              clear();
               setHrcosSelect({
                 CODE_CODE: r["CODE_CODE"],
                 VALUE1: r["VALUE1"],
               });
-              setHrwktSelect({});
-              setHrwdtSelect({});
-              setHrdtsSelect({});
-              setHrpatSelect("");
-              setTrmcdSelect("");
             } else if (tmp === "HRWKT") {
-              setHrwktSelect({
+              clear();
+              setHrpatSelect({
                 CODE_CODE: r["CODE_CODE"],
                 VALUE1: r["VALUE1"],
               });
-              setHrwdtSelect({});
-              setHrdtsSelect({});
-              setHrcosSelect({});
-              setHrpatSelect("");
-              setTrmcdSelect("");
             } else if (tmp === "HRWDT") {
+              clear();
               setHrwdtSelect((prev) => ({
                 ...prev,
                 [r["CODE_CODE"]]: {
@@ -577,12 +668,8 @@ export default function UserResourceMgm({
                   VALUE4: r["VALUE4"],
                 },
               }));
-              setHrcosSelect({});
-              setHrwktSelect({});
-              setHrdtsSelect({});
-              setHrpatSelect("");
-              setTrmcdSelect("");
             } else if (tmp === "OPCOD") {
+              clear();
               const tmpObj = (classCode?.["OPCOD"] || []).find(
                 (row) => row["CODE_CODE"] === r["CODE_CODE"],
               );
@@ -602,12 +689,8 @@ export default function UserResourceMgm({
                       VALUE4: r["VALUE4"],
                     },
                   }));
-                  setHrcosSelect({});
-                  setHrwktSelect({});
-                  setHrwdtSelect({});
-                  setHrpatSelect("");
-                  setTrmcdSelect("");
                 } else {
+                  clear();
                   const tmpHrdts2 = (classCode?.["HRDTS"] || []).find(
                     (row) => row["VALUE1_CHAR"] === tmpObj?.["CODE_CODE"] || "",
                   );
@@ -622,11 +705,6 @@ export default function UserResourceMgm({
                         VALUE4: r["VALUE4"],
                       },
                     }));
-                    setHrcosSelect({});
-                    setHrwktSelect({});
-                    setHrwdtSelect({});
-                    setHrpatSelect("");
-                    setTrmcdSelect("");
                   } else {
                     sendErr("해당 항목과 맞는 코드가 없습니다.");
                   }
@@ -635,16 +713,19 @@ export default function UserResourceMgm({
                 sendErr("해당 항목과 맞는 코드가 없습니다.");
               }
             } else if (tmp === "HRPAT") {
-              setHrpatSelect(r["CODE_CODE"]);
+              clear();
+              setHrpatSelect({
+                CODE_CODE: r["CODE_CODE"],
+                VALUE1: r["VALUE1"],
+              });
             } else if (tmp === "TRMCD") {
+              clear();
               setTrmcdSelect(r["CODE_CODE"]);
+            } else if (tmp === "HRTAU") {
+              clear();
+              setHrtauSelect(r);
             } else {
-              setHrpatSelect("");
-              setTrmcdSelect("");
-              setHrcosSelect({});
-              setHrwktSelect({});
-              setHrwdtSelect({});
-              setHrdtsSelect({});
+              clear();
             }
             return false;
           }}

@@ -32,6 +32,7 @@ import { commonHeader2, commonHeader5 } from "../../Util/Header";
 import dayjs from "dayjs";
 import { CommonChk, CommonInput } from "../../comp/Input";
 import { Btn, MenuBtn } from "../../comp/Btn";
+import { confirmAsync } from "../../confirmService";
 
 const TABS = ["요청", "확정 전 리스트", "검토 리스트"];
 const BTN_ARRAY: MenuBtnDataType[] = [
@@ -561,6 +562,9 @@ const GRID4_HEADER: TableHeaderType[] = [
   },
   { key: "HOLIDAY_ADD_HOUR", value: "휴일연장", w: "4rem" },
   { key: "REMARK", value: "사유", w: "10rem" },
+  { key: "TERMINAL_CODE", value: "터미널", w: "4rem" },
+  { key: "TMP_TERMINAL_CODE", value: "임시터미널", w: "4rem" },
+  { key: "TEAM_CODE", value: "부서", w: "6rem" },
   { key: "USABLE_FLAG", value: "사용유무", w: "4rem" },
   { key: "CREATED_NAME", value: "생성자", w: "4rem" },
   { key: "CREATED_TIME", value: "생성시간", w: "6rem" },
@@ -767,7 +771,7 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
     );
 
     return (
-      <div className="grid grid-cols-[36%_1fr] grid-rows-[10rem_10rem_1fr] gap-2">
+      <div className="grid grid-cols-[36%_64%] grid-rows-[10rem_10rem_1fr] gap-2">
         <div className="row-span-3">
           <CommonContainer
             title="요청리스트"
@@ -810,6 +814,10 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
                     txt="거절"
                     type="DELETE"
                     onClick={() => {
+                      if (!grid1Select?.["USER_SID"]) {
+                        sendErr("선택한행이 없습니다.");
+                        return;
+                      }
                       openModal({
                         array: [
                           {
@@ -820,7 +828,7 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
                               MON: grid1Select?.["MON"] || "",
                               DAY: grid1Select?.["DAY"] || "",
                               USER_SID: grid1Select?.["USER_SID"] || "",
-                              SEQ: grid1Select?.["SEQ"] || "",
+                              SEQ: grid1Select?.["SEQ"],
                               USER_ID: grid1Select?.["USER_ID"] || "",
                               USER_NAME: grid1Select?.["USER_NAME"] || "",
                               REQ_DATE: grid1Select?.["REQ_DATE"] || "",
@@ -844,8 +852,15 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
                   <Btn
                     txt="확정"
                     type="NONE"
-                    onClick={() => {
-                      reqClick("A");
+                    onClick={async () => {
+                      const ret = await confirmAsync({
+                        title: "확정재확인",
+                        message:
+                          "확정을 누르면 스케줄 및 OT가 일괄 확정됩니다.",
+                      });
+                      if (ret) {
+                        reqClick("A");
+                      }
                     }}
                   />
                 </div>
@@ -891,7 +906,7 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
             body={grid4}
             header={GRID4_HEADER}
             height="13rem"
-            width="100%"
+            width="100%%"
           />
         </CommonContainer>
       </div>
@@ -1140,7 +1155,7 @@ const BeforeList = forwardRef<ReqHandle, SetProp>(
     }
 
     return (
-      <div className="grid grid-cols-[35%_1fr] grid-rows-[10rem_10rem_1fr] gap-2">
+      <div className="grid grid-cols-[36%_64%] grid-rows-[10rem_10rem_1fr] gap-2">
         <div className="row-span-3">
           <CommonContainer
             title="확정 전 리스트"
@@ -1342,6 +1357,57 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
       }
     }, [grid1Ref.current, hrreqHrSelect]);
 
+    const cancelClick = useCallback(async () => {
+      const tmp = grid1Ref.current?.getChk();
+
+      if (tmp && Object.keys(tmp).length > 0) {
+        const reqArray = Object.values(tmp).map((v) => ({
+          YEAR: v?.["YEAR"] || "",
+          MON: v?.["MON"] || "",
+          DAY: v?.["DAY"] || "",
+          SEQ: v?.["SEQ"] || 0,
+          USER_SID: v?.["USER_SID"] || "",
+          DETAIL_STATUS: v?.["DETAIL_STATUS"] || "",
+        }));
+        const map = new Map<string, any>();
+        map.set("reqFlag", "D");
+        map.set("reqArray", reqArray);
+
+        sendLoading(true);
+        const ret = await getApi<Record<number, TableRow[]>>({
+          baseUrl: "INFRA",
+          method: "POST",
+          url: `/work/setWorkM010_041`,
+          pgmId: pgmId,
+          sucFlag: true,
+          params: map,
+        });
+        sendLoading(false);
+
+        if (ret.ok) {
+          searchClick({
+            type: "APPR",
+            pgmId: pgmId,
+            fromDate: fromDate,
+            toDate: toDate,
+            deptCode: deptCode,
+            reqFlag: hrreqHrSelect,
+            terminalCode: terminalCode,
+            userName: userName,
+            date: date,
+            dateFlag: dateFlag,
+          })
+            .then((v) => {
+              setGrid1(v);
+            })
+            .catch((v) => setGrid1([]));
+        }
+      } else {
+        sendErr("선택한 항목이 없습니다.");
+        return;
+      }
+    }, [grid1Ref.current, hrreqHrSelect]);
+
     return (
       <div className="grid grid-rows-[10rem_10rem_1fr] gap-2">
         <div>
@@ -1383,6 +1449,13 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
                 </div>
                 <div className="mainInput">
                   <Btn txt="검토완료" type="SAVE" onClick={() => compClick()} />
+                </div>
+                <div className="mainInput">
+                  <Btn
+                    txt="검토취소"
+                    type="DELETE"
+                    onClick={() => cancelClick()}
+                  />
                 </div>
               </div>
             }>

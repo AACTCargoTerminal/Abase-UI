@@ -99,6 +99,17 @@ export const setExcelFile = ({
           return;
         }
         result.set("teamCode", valueTeam);
+        //터미널코드 가져오기
+        const addrTerminal = XLSX.utils.encode_cell({ c: 2, r: 7 });
+        const cellTerminal = ws[addrTerminal];
+        const valueTerminal = cellTerminal?.v ?? "";
+
+        if (!valueTerminal) {
+          sendErr(`터미널코드가 없습니다.`);
+          resolve(null);
+          return;
+        }
+        result.set("terminalCode", valueTerminal);
         // 12행부터 마지막 행까지 읽기 (r:11 => 엑셀 12행)
         for (let r = 10; r <= range.e.r; r++) {
           const userIdAddr = XLSX.utils.encode_cell({ c: 1, r }); // B열

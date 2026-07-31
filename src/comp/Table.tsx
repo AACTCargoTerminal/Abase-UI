@@ -7,22 +7,23 @@ import React, {
   useRef,
   useState,
 } from "react";
-import type {
-  IconNameType,
-  PairType,
-  RowPrepType,
-  TableHandle,
-  TableHeaderType,
-  TableRow,
-  TableSortType,
-  TableType,
-  TableType2,
+import {
+  type IconNameType,
+  type PairType,
+  type RowPrepType,
+  type TableHandle,
+  type TableHeaderType,
+  type TableRow,
+  type TableSortType,
+  type TableType,
+  type TableType2,
 } from "../Util/Type";
 import { IoIosArrowDown, IoIosArrowUp, IoMdRefresh } from "react-icons/io";
-import { confirmObj, sendErr, sortTable } from "../Util/Util";
+import { confirmObj, getUUID, sendErr, sortTable } from "../Util/Util";
 import { createPortal } from "react-dom";
 import { MdOutlineHorizontalRule, MdPushPin } from "react-icons/md";
 import { CommonDropDown } from "./DropDown";
+import { Btn } from "./Btn";
 
 function getIcon(iconName: IconNameType, color: string) {
   switch (iconName) {
@@ -1079,6 +1080,9 @@ export const TableCust2 = React.memo(
     useEffect(() => {
       setDtAllOpen(false);
       setChkAllOpen(false);
+      body.forEach((row) => {
+        row["rowId"] = getUUID();
+      });
       setCopBody(body.map((b) => ({ ...b })));
     }, [body]);
 
@@ -1311,7 +1315,6 @@ export const TableCust2 = React.memo(
                       </div>
                     </div>
                   );
-
                 default:
                   return (
                     <div
@@ -1613,7 +1616,7 @@ const RowCust2 = React.memo(
               }}>
               <CellCust2
                 headerType={h}
-                value={copRow[h.key]}
+                value={h.key === "BTN" ? copRow["rowId"] : copRow[h.key]}
                 batch={batch}
                 cellCss={preCell}
                 custValue={onCustumizeText?.(h.key, copRow[h.key])}
@@ -1701,6 +1704,22 @@ const CellCust2 = React.memo(
             )}
           </div>
         );
+      case "BTN": {
+        if (headerType.option?.type === "BTN") {
+          return (
+            <Btn
+              txt={headerType.option.set.txt}
+              type={headerType.option.set.type}
+              onClick={() => {
+                if (headerType.option?.type === "BTN") {
+                  headerType.option.set.onClick?.(value);
+                }
+              }}
+            />
+          );
+        }
+      }
+
       default: {
         if (batch) {
           if (newFlag) {

@@ -163,12 +163,10 @@ export type ModalProps = {
   deviceType?: DeviceType;
 };
 
-export type TableHeaderType = {
-  key: string | "CHK" | "DROP";
+type BaseHeader = {
   value: string;
   w: string;
   sum?: number;
-  option?: TableBodyOptType;
   type?: TableObjType;
   read?: boolean;
   disable?: boolean;
@@ -176,6 +174,19 @@ export type TableHeaderType = {
   onClickChk?: boolean;
 };
 
+export type TableHeaderType =
+  | (BaseHeader & {
+      key: "BTN";
+      option: TableBodyOptType;
+    })
+  | (BaseHeader & {
+      key: "CHK" | "DROP";
+      option?: TableBodyOptType;
+    })
+  | (BaseHeader & {
+      key: string;
+      option?: TableBodyOptType;
+    });
 export type TableObjType = "NUM" | "DOUBLE" | "STR";
 
 export type TableBodyOptType =
@@ -183,6 +194,7 @@ export type TableBodyOptType =
   | { type: "CHK" }
   | { type: "WRITE"; ext?: number }
   | { type: "ICON"; icon: IconNameType; value: string; color: string }
+  | { type: "BTN"; set: BtnType }
   | {
       type: "DROPDOWN";
       header: TableHeaderType[];
@@ -277,7 +289,7 @@ export type BtnFunType =
 
 export type BtnType = {
   txt: string;
-  onClick?: () => void;
+  onClick?: (r?: string) => void;
   width?: string;
   type: BtnFunType;
   tooltip?: string;
