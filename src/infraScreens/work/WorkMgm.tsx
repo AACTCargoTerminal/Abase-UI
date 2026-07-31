@@ -651,9 +651,15 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     }, [date, chkSelect, approveDay]);
 
     const saveClick = useCallback(async () => {
-      if (!userTrmCode) {
-        sendErr("터미널코드가 없습니다.");
+      const tmp = hrmtr.find((v) => v?.["CODE_CODE"] === hrmtrSelect);
+      if (!tmp) {
+        sendErr("터미널을 선택해주세요");
         return;
+      } else {
+        if (tmp?.["VALUE1_CHAR"]) {
+          sendErr("터미널을 하나만 선택할수있습니다.");
+          return;
+        }
       }
 
       const map = new Map<string, any>();
