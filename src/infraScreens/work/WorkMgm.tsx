@@ -143,6 +143,8 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     const [postn, setPostn] = useState<TableRow[]>([]);
     const [postnSelect, setPostnSelect] = useState<TableRow>({});
 
+    const hrmtrRef = useRef<string | null>(null);
+
     useEffect(() => {
       getHRPAT();
       getHRREQ();
@@ -198,7 +200,13 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                 tmp_split.includes(v?.["CODE_CODE"]),
               );
               setHrmtr(tmp_hrmtr2);
-              setHrmtrSelect("");
+
+              if (hrmtrRef.current !== null) {
+                setHrmtrSelect(hrmtrRef.current);
+              } else {
+                setHrmtrSelect("");
+              }
+              hrmtrRef.current = null;
             }
           } else {
             sendErr("해당 부서에는 터미널 권한이 없습니다.");
@@ -361,17 +369,17 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     }, [username]);
 
     async function searchClick(teamCode?: string, terminalCode?: string) {
-      if (!hrmtrSelect || !hrpatSelect) {
-        sendErr("파트 및 터미널을 선택해주세요");
-        return;
-      }
-
       setChangeGrid1Dt({});
       setChkSelect({});
       setAllChk(false);
       sendLoading(true);
       const code = teamCode ?? hrpatSelect;
       const terminal = terminalCode ?? hrmtrSelect;
+
+      if (!code || !terminal) {
+        sendErr("파트 및 터미널을 선택해주세요");
+        return;
+      }
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
@@ -550,6 +558,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         sendLoading(false);
         return;
       }
+      hrmtrRef.current = String(tmp.get("terminalCode"));
       setHrmtrSelect(String(tmp.get("terminalCode")));
 
       const res = await getApi<Record<number, TableRow[]>>({
@@ -867,7 +876,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
               </div>
             </div>
           </CommonContainer>
-          <CommonContainer title="필터">
+          <CommonContainer title="필터 및 휴무일">
             <div className="flex items-center gap-3">
               <div className="mainInput w-[20%] min-w-[20%]">
                 <CommonInput
@@ -878,22 +887,15 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                   labelW="20%"
                 />
               </div>
-              {/* <div className="mainInput">
-                <CommonDropDown
-                  id="close"
-                  data={FILTER_DATA}
-                  dropHeight="10rem"
-                  header={commonHeader2}
-                  inputKey={{
-                    key: "CODE_CODE",
-                    showKey: "0",
-                    value: closeSelect,
-                  }}
-                  onClick={(r) => setCloseSelect(r["CODE_CODE"])}
-                  title="마감 유무"
+              <div className="mainInput w-[20%] min-w-[20%]">
+                <CommonInput
+                  id="holiday"
+                  value={String(holidayArray.length) + "일"}
+                  label="휴무일"
                   labelW="40%"
+                  read={true}
                 />
-              </div> */}
+              </div>
             </div>
           </CommonContainer>
         </div>
