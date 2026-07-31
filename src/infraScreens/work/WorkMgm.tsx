@@ -144,6 +144,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     const [postnSelect, setPostnSelect] = useState<TableRow>({});
 
     const hrmtrRef = useRef<string | null>(null);
+    const inputRef = useRef<string | null>(null);
 
     useEffect(() => {
       getHRPAT();
@@ -224,6 +225,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         }
       }
     }, [hrpatSelect]);
+
     useEffect(() => {
       const handleClick = (e: MouseEvent) => {
         if (opcodOpen === false) {
@@ -843,7 +845,10 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                     showKey: "1",
                     value: hrmtrSelect,
                   }}
-                  onClick={(r) => setHrmtrSelect(r?.["CODE_CODE"] || "")}
+                  onClick={(r) => {
+                    setHrmtrSelect(r?.["CODE_CODE"] || "");
+                    inputRef.current = r?.["VALUE1_CHAR"] || "";
+                  }}
                   labelW="30%"
                   title="터미널"
                   read={hrmtr.length <= 1}
@@ -1315,6 +1320,13 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
               focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500`}
                               onClick={(e) => {
                                 e.stopPropagation();
+                                console.log(inputRef.current);
+                                if (inputRef.current) {
+                                  sendErr(
+                                    "여러 터미널 선택 시 변경 불가능합니다.",
+                                  );
+                                  return;
+                                }
                                 workBtnClick(e, "INPUT", i, idx, 0);
                               }}>
                               <input
