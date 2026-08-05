@@ -347,8 +347,8 @@ export const CommonDropDown = React.memo(
         <div className="relative flex-1 h-full">
           <div
             ref={containerRef}
-            className={`w-full h-full flex items-center bg-white rounded-md border border-gray-300 px-3 py-1
-              focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500`}
+            className={`w-full h-full flex items-center rounded-md px-3 py-1
+               ${read ? "border-2 border-gray-400 bg-gray-100 focus:outline-none" : "border border-gray-300 bg-white focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500"}`}
             onClick={toggle}>
             <input
               id={id}
@@ -484,7 +484,8 @@ export const CommonDropDown = React.memo(
       prev.id === next.id &&
       prev.data === next.data &&
       prev.inputKey === next.inputKey &&
-      prev.find === next.find
+      prev.find === next.find &&
+      prev.read === next.read
     );
   },
 );

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import type { ModalComp } from "../../Util/Type";
+import { useCallback, useEffect, useState } from "react";
+import type { ModalComp, TableRow } from "../../Util/Type";
 import { CommonInput } from "../../comp/Input";
+import { getApi, sendErr, sendLoading } from "../../Util/Util";
 
 export default function WorkHrReqDeny({
   param,
@@ -32,7 +33,7 @@ export default function WorkHrReqDeny({
     if (param?.["USER_SID"]) {
       setParams((prev) => ({ ...prev, userSid: param["USER_SID"] }));
     }
-    if (param?.["SEQ"]) {
+    if (param?.["SEQ"] !== undefined) {
       setParams((prev) => ({ ...prev, seq: param["SEQ"] }));
     }
     if (param?.["USER_ID"]) {
@@ -46,7 +47,34 @@ export default function WorkHrReqDeny({
     }
   }, [param]);
 
+  useEffect(() => {
+    if (headerAction?.type === "저장") {
+      saveClick();
+    }
+  }, [headerAction?.type]);
+
   const [remark, setRemark] = useState("");
+
+  const saveClick = useCallback(async () => {
+    if (!remark) {
+      sendErr("사유는 필수입니다.");
+      return;
+    }
+    sendLoading(true);
+    const ret = await getApi<Record<number, TableRow[]>>({
+      baseUrl: "INFRA",
+      method: "GET",
+      url: `/work/setWorkM010_036?date=${params?.date?.replaceAll("-", "")}&userSid=${params?.userSid}&seq=${params.seq}&remark=${remark}`,
+      pgmId: pgmId,
+      sucFlag: true,
+    });
+    sendLoading(false);
+
+    if (ret.ok) {
+      onClose?.();
+      outParam?.({ SAVE: "SAVE" });
+    }
+  }, [params, remark]);
 
   return (
     <div className="px-[5%] py-[2%] grid grid-cols-[0.8fr_1fr] gap-3">

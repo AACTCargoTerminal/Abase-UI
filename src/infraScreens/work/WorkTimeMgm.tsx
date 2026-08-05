@@ -27,9 +27,11 @@ const GRID1_HEADER: TableHeaderType[] = [
   { key: "CHK", value: "", w: "2rem" },
   { key: "USER_NAME", value: "이름", w: "3rem", sum: 0 },
   { key: "SEQ", value: "순번", w: "2rem" },
-  { key: "DETAIL_STATUS", value: "최신상태", w: "7rem" },
+  { key: "DETAIL_STATUS", value: "최신상태", w: "6rem" },
   { key: "REQ_START_TIME", value: "시작시간", w: "3rem" },
   { key: "REQ_END_TIME", value: "종료시간", w: "3rem" },
+  { key: "CAPS_START_TIME", value: "캡스시작", w: "3rem" },
+  { key: "CAPS_END_TIME", value: "캡스종료", w: "3rem" },
   {
     key: "ADD_WORK_HOUR",
     value: "연장근무시간",
@@ -90,6 +92,10 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
           } else if (v.key === "REQ_START_TIME") {
             return { ...v, w: "5rem" };
           } else if (v.key === "REQ_END_TIME") {
+            return { ...v, w: "5rem" };
+          } else if (v.key === "CAPS_START_TIME") {
+            return { ...v, w: "5rem" };
+          } else if (v.key === "CAPS_END_TIME") {
             return { ...v, w: "5rem" };
           } else if (v.key === "ADD_WORK_HOUR") {
             return { ...v, w: "5rem" };
@@ -252,7 +258,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
             header={grid1Header}
             height="30rem"
             width="100%"
-            fixCount={1}
+            fixCount={2}
             doubleClick={(v) => {
               if (v["USER_SID"] !== userSid) {
                 sendErr("본인계정만 수정가능합니다.");

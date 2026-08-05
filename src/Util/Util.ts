@@ -983,3 +983,23 @@ export function getDiffDays(startDate: string, endDate: string): number {
 
   return diff < 0 ? -1 : diff;
 }
+
+//YYYYMMDD 날짜 검증
+export const isValidDate = (dateStr: string): boolean => {
+  // YYYYMMDD 형식 확인
+  if (!/^\d{8}$/.test(dateStr)) {
+    return false;
+  }
+
+  const year = Number(dateStr.substring(0, 4));
+  const month = Number(dateStr.substring(4, 6));
+  const day = Number(dateStr.substring(6, 8));
+
+  const date = new Date(year, month - 1, day);
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+};

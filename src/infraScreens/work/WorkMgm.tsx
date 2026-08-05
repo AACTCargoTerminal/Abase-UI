@@ -37,12 +37,6 @@ import { getExcelFile, setExcelFile } from "./WorkUtil";
 import { selectNav } from "../../slices/user";
 dayjs.locale("ko");
 
-const FILTER_DATA: TableRow[] = [
-  { CODE_CODE: "", CODE_NAME: "ALL" },
-  { CODE_CODE: "Y", CODE_NAME: "예" },
-  { CODE_CODE: "N", CODE_NAME: "아니오" },
-];
-
 const HRREQ_HEADER = [
   "#F97316",
   "#F59E0B",
@@ -52,11 +46,12 @@ const HRREQ_HEADER = [
   "#EF4444",
   "#8B5CF6",
   "#6366F1",
+  "#8B0000",
+  "#6D4C41",
 ];
 
 const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
   ({ outParam, param, pgmId }, ref) => {
-    const dispatch = useDispatch();
     const [opcodCss, setOpcodCss] = useState<{
       x: number;
       y: number;
@@ -121,7 +116,6 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     >({});
     const [opcod, setOpcod] = useState<TableRow[]>([]);
     const [copOpcod, setCopOpcod] = useState<TableRow[]>([]);
-    const [hrpatOrigin, setHrpatOrigin] = useState<TableRow[]>([]);
     const [approveDay, setApproveDay] = useState(getInt(moment().format("DD")));
     const [chkSelect, setChkSelect] = useState<Record<number, boolean>>({});
     const [allChk, setAllChk] = useState<boolean>(false);
@@ -132,18 +126,31 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
           (ur) => ur["CLASS_CODE"] === "TRMCD",
         )?.["CODE_CODE"] || "",
     );
+    const userHrtauCode = useSelector(
+      (state: RootState) =>
+        state.user.userInfo?.relArray.filter(
+          (ur) => ur["CLASS_CODE"] === "HRTAU",
+        ) ?? [],
+    );
     const [hrpat, setHrpat] = useState<TableRow[]>([]);
     const [hrpatSelect, setHrpatSelect] = useState("");
-    const userId = useSelector(
-      (state: RootState) => state.user.userInfo?.userId || "",
-    );
-    const [btnAuth, setBtnAuth] = useState(false);
+    const [hrmtr, setHrmtr] = useState<TableRow[]>([]);
+    const [orgHrmtr, setOrgHrmtr] = useState<TableRow[]>([]);
+    const [hrmtrSelect, setHrmtrSelect] = useState("");
     const [hrreq, setHrreq] = useState<TableRow[]>([]);
     const [hrreqHeader, setHrreqHeader] = useState<TableRow>({});
+
+    const [postn, setPostn] = useState<TableRow[]>([]);
+    const [postnSelect, setPostnSelect] = useState<TableRow>({});
+
+    const hrmtrRef = useRef<string | null>(null);
+    const inputRef = useRef<string | null>(null);
 
     useEffect(() => {
       getHRPAT();
       getHRREQ();
+      getHRMTR();
+      getPOSTN();
     }, []);
 
     async function getHRREQ() {
@@ -158,18 +165,67 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     }
 
     async function getHRPAT() {
-      const data = await getClass("HRPAT", pgmId);
-      setHrpatOrigin(data);
-      const filterTmp = data.filter(
-        (ft) =>
-          ft["VALUE6_CHAR"] === userId ||
-          ft["VALUE3_CHAR"] === userId ||
-          ft["VALUE4_CHAR"] === userId ||
-          ft["VALUE5_CHAR"] === userId,
+      const data = await getClass("HRTAU", pgmId);
+      const filterTmp = data.filter((ft) =>
+        userHrtauCode.find((hrv) => hrv?.["CODE_CODE"] === ft?.["CODE_CODE"]),
       );
       setHrpat(filterTmp);
-      setHrpatSelect(filterTmp?.[0]?.["CODE_CODE"] || "");
     }
+
+    async function getHRMTR() {
+      const data = await getClass("HRMTR", pgmId);
+      setOrgHrmtr(data);
+    }
+
+    async function getPOSTN() {
+      const data = await getClass("POSTN", pgmId);
+      setPostn(data);
+    }
+
+    useEffect(() => {
+      if (hrpatSelect) {
+        const tmp = userHrtauCode.find((v) => v?.["CODE_CODE"] === hrpatSelect);
+        if (tmp) {
+          const tmp_hrmtr = orgHrmtr.find(
+            (v) => v?.["CODE_CODE"] === tmp?.["VALUE1"],
+          );
+          if (tmp_hrmtr) {
+            const tmp_split = String(tmp_hrmtr?.["VALUE1_CHAR"] || "")
+              .split(";")
+              .filter(Boolean);
+            if (tmp_split.length === 0) {
+              setHrmtr([tmp_hrmtr]);
+              setHrmtrSelect(tmp_hrmtr?.["CODE_CODE"]);
+            } else {
+              const tmp_hrmtr2 = orgHrmtr.filter((v) =>
+                tmp_split.includes(v?.["CODE_CODE"]),
+              );
+              setHrmtr(tmp_hrmtr2);
+
+              if (hrmtrRef.current !== null) {
+                setHrmtrSelect(hrmtrRef.current);
+              } else {
+                setHrmtrSelect("");
+              }
+              hrmtrRef.current = null;
+            }
+          } else {
+            sendErr("해당 부서에는 터미널 권한이 없습니다.");
+          }
+          const tmp_postn = postn.find(
+            (v) => v?.["CODE_CODE"] === tmp?.["VALUE2"],
+          );
+          if (tmp_postn) {
+            setPostnSelect(tmp_postn);
+          } else {
+            sendErr("해당 부서에는 직급 권한이 없습니다.");
+          }
+        } else {
+          sendErr("해당부서에서 권한이 없습니다.");
+        }
+      }
+    }, [hrpatSelect]);
+
     useEffect(() => {
       const handleClick = (e: MouseEvent) => {
         if (opcodOpen === false) {
@@ -273,28 +329,9 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     useEffect(() => {
       if (date) {
         setDayLenth(getInt(moment(date).endOf("month").format("DD")));
-        searchClick();
         getHoliday();
       }
     }, [date]);
-    useEffect(() => {
-      if (hrpatSelect) {
-        const filterData = hrpat.find((v) => v?.["CODE_CODE"] === hrpatSelect);
-        if (filterData) {
-          if (
-            filterData?.["VALUE3_CHAR"] === userId ||
-            filterData?.["VALUE4_CHAR"] === userId ||
-            filterData?.["VALUE5_CHAR"] === userId
-          ) {
-            setBtnAuth(true);
-          } else {
-            setBtnAuth(false);
-          }
-        } else {
-          setBtnAuth(false);
-        }
-      }
-    }, [hrpatSelect]);
 
     useEffect(() => {
       setGrid1(
@@ -333,16 +370,22 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       }
     }, [username]);
 
-    async function searchClick(teamCode?: string) {
+    async function searchClick(teamCode?: string, terminalCode?: string) {
       setChangeGrid1Dt({});
       setChkSelect({});
       setAllChk(false);
       sendLoading(true);
       const code = teamCode ?? hrpatSelect;
+      const terminal = terminalCode ?? hrmtrSelect;
+
+      if (!code || !terminal) {
+        sendErr("파트 및 터미널을 선택해주세요");
+        return;
+      }
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
-        url: `/work/getWorkM010_002?date=${date}&deptCode=${code}&approveFlag=`,
+        url: `/work/getWorkM010_002?date=${date}&deptCode=${code}&terminalCode=${terminal}&approveFlag=`,
         pgmId: pgmId,
       });
       sendLoading(false);
@@ -509,6 +552,17 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       }
       setHrpatSelect(String(tmp.get("teamCode")));
 
+      const termTmp = hrmtr.find(
+        (hf) => hf["CODE_CODE"] === String(tmp.get("terminalCode")),
+      );
+      if (!termTmp) {
+        sendErr(`${tmp.get("terminalCode")} 업로드 권한이 없습니다.`);
+        sendLoading(false);
+        return;
+      }
+      hrmtrRef.current = String(tmp.get("terminalCode"));
+      setHrmtrSelect(String(tmp.get("terminalCode")));
+
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "POST",
@@ -519,7 +573,10 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       });
       sendLoading(false);
       if (res.ok) {
-        await searchClick(String(tmp.get("teamCode")));
+        await searchClick(
+          String(tmp.get("teamCode")),
+          String(tmp.get("terminalCode")),
+        );
       }
     }
 
@@ -533,7 +590,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
-        url: `/work/setWorkM010_017?date=${date}&teamCode=${hrpatSelect}`,
+        url: `/work/setWorkM010_017?date=${date}&teamCode=${hrpatSelect}&terminalCode=${hrmtrSelect}`,
         pgmId: pgmId,
         sucFlag: true,
       });
@@ -541,7 +598,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       if (res.ok) {
         await searchClick();
       }
-    }, [date, chkSelect]);
+    }, [date, chkSelect, hrpatSelect, hrmtrSelect]);
 
     const approveClick = useCallback(async () => {
       const tmp = Object.keys(chkSelect)
@@ -557,24 +614,34 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       }
 
       const userArray = tmp.flatMap((v) => {
-        const gridDtTmp = Object.keys(orgGrid1Dt?.[v]).flatMap((gv) => {
+        const userGridData = orgGrid1Dt?.[v] ?? {};
+
+        const gridDtTmp = Object.keys(userGridData).flatMap((gv) => {
+          const dayData = userGridData[gv] ?? [];
+
           if (
-            orgGrid1Dt?.[v]?.[gv].filter((ogv) => ogv?.["APPROVE_FLAG"] !== "Y")
-              .length > 0 &&
+            dayData.some((ogv) => ogv?.APPROVE_FLAG !== "Y") &&
             gv !== "00" &&
             Number(gv) <= approveDay
           ) {
             return [gv];
-          } else {
-            return [];
           }
+
+          return [];
         });
+
         if (gridDtTmp.length > 0) {
           return [{ userSid: v, dayArray: gridDtTmp }];
-        } else {
-          return [];
         }
+
+        return [];
       });
+
+      if (userArray.length === 0) {
+        sendErr("확정할 스케줄이 없습니다.");
+        return;
+      }
+
       const map = new Map<string, any>();
       map.set("date", date);
       map.set("userArray", userArray);
@@ -595,15 +662,22 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     }, [date, chkSelect, approveDay]);
 
     const saveClick = useCallback(async () => {
-      if (!userTrmCode) {
-        sendErr("터미널코드가 없습니다.");
+      const tmp = hrmtr.find((v) => v?.["CODE_CODE"] === hrmtrSelect);
+      if (!tmp) {
+        sendErr("터미널을 선택해주세요");
         return;
+      } else {
+        if (tmp?.["VALUE1_CHAR"]) {
+          sendErr("터미널을 하나만 선택할수있습니다.");
+          return;
+        }
       }
 
       const map = new Map<string, any>();
       map.set("date", date);
       map.set("halfType", halfTime ? "Y" : "N");
       map.set("teamCode", hrpatSelect);
+      map.set("terminalCode", hrmtrSelect);
       const userArray: TableRow[] = [];
       Object.keys(changeGrid1Dt).forEach((v) => {
         if (changeGrid1Dt?.[v]) {
@@ -676,10 +750,18 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     }, [changeGrid1Dt, date, halfTime, hrpatSelect, userTrmCode, orgGrid1]);
 
     const getExcel = useCallback(async () => {
+      const tmp = orgHrmtr.find((v) => v?.["CODE_CODE"] === hrmtrSelect);
+      if (!tmp || tmp?.["VALUE1_CHAR"]) {
+        sendErr(
+          "다운로드 시 터미널은 필수 선택입니다. \n또는 여러터미널을 선택할수 없습니다.",
+        );
+        return;
+      }
+
       const ret = await getApi<string>({
         baseUrl: "INFRA",
         method: "GET",
-        url: `/work/getExWorkSch?teamCode=${hrpatSelect}&date=${date}`,
+        url: `/work/getExWorkSch?teamCode=${hrpatSelect}&date=${date}&terminalCode=${hrmtrSelect}`,
         pgmId: pgmId,
         sucFlag: true,
       });
@@ -718,16 +800,14 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
           window.URL.revokeObjectURL(url);
         }
       }
-    }, [hrpatSelect, date]);
+    }, [hrpatSelect, date, hrmtrSelect]);
 
     return (
       <div className="w-full h-full flex flex-col gap-3 py-[0.25%] pr-[0.5%]">
-        <div className="grid grid-cols-[0.50fr_0.45fr] gap-3 items-center justify-between">
-          {" "}
-          <CommonContainer title="조회 및 버튼">
-            <div className="grid grid-cols-[0.25fr_0.25fr_0.1fr_0.25fr_0.15fr] items-center gap-3">
-              <div className="mainInput">
-                {" "}
+        <div className="grid grid-cols-[3fr_2fr] gap-3 items-start">
+          <CommonContainer title="조회 및 버튼" width="fit-content">
+            <div className="flex flex-nowrap items-center gap-x-3 gap-y-2">
+              <div className="mainInput basis-[15%] min-w-[190px] max-w-[220px]">
                 <CommonMonthDatePicker
                   id="date"
                   onClick={(v) => {
@@ -735,10 +815,10 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                   }}
                   value={date}
                   title="날짜"
-                  colSize="15%"
+                  colSize="15%x"
                 />
               </div>
-              <div className="mainInput">
+              <div className="mainInput min-w-[20%] flex-[1_1_25%] max-w-[30%]">
                 <CommonDropDown
                   id="dptcd"
                   data={hrpat}
@@ -754,10 +834,30 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                   title="파트 명"
                 />
               </div>
-              <div className="mainInput">
+              <div className="mainInput basis-[20%] max-w-[25%]">
+                <CommonDropDown
+                  id="terminal"
+                  data={hrmtr}
+                  dropHeight="10rem"
+                  header={commonHeader4}
+                  inputKey={{
+                    key: "CODE_CODE",
+                    showKey: "1",
+                    value: hrmtrSelect,
+                  }}
+                  onClick={(r) => {
+                    setHrmtrSelect(r?.["CODE_CODE"] || "");
+                    inputRef.current = r?.["VALUE1_CHAR"] || "";
+                  }}
+                  labelW="30%"
+                  title="터미널"
+                  read={hrmtr.length <= 1}
+                />
+              </div>
+              <div className="mainInput shrink-0">
                 <Btn txt="조회" type="SEARCH" onClick={() => searchClick()} />
               </div>
-              <div className="mainInput">
+              <div className="mainInput shrink-0">
                 <Btn
                   txt="엑셀 양식 다운로드"
                   type="PRINT"
@@ -770,7 +870,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                   }}
                 />
               </div>
-              <div className="mainInput">
+              <div className="mainInput shrink-0">
                 <Btn
                   txt="엑셀 업로드"
                   type="EXCEL"
@@ -781,31 +881,24 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
               </div>
             </div>
           </CommonContainer>
-          <CommonContainer title="필터">
-            <div className="grid grid-cols-[0.15fr_0.18fr_0.18fr_0.2fr] gap-3 items-center">
-              <div className="mainInput">
+          <CommonContainer title="필터 및 휴무일">
+            <div className="flex items-center gap-3">
+              <div className="mainInput w-[20%] min-w-[20%]">
                 <CommonInput
                   id="username"
                   value={username}
                   onChange={(v) => setUsername(v)}
                   label="이름"
-                  labelW="30%"
+                  labelW="20%"
                 />
               </div>
-              <div className="mainInput">
-                <CommonDropDown
-                  id="close"
-                  data={FILTER_DATA}
-                  dropHeight="10rem"
-                  header={commonHeader2}
-                  inputKey={{
-                    key: "CODE_CODE",
-                    showKey: "0",
-                    value: closeSelect,
-                  }}
-                  onClick={(r) => setCloseSelect(r["CODE_CODE"])}
-                  title="마감 유무"
+              <div className="mainInput w-[20%] min-w-[20%]">
+                <CommonInput
+                  id="holiday"
+                  value={String(holidayArray.length) + "일"}
+                  label="휴무일"
                   labelW="40%"
+                  read={true}
                 />
               </div>
             </div>
@@ -815,7 +908,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         <CommonContainer
           title="근무표"
           childrenTitle={
-            <div className="grid grid-cols-[0.28fr_0.6fr] justify-between items-center gap-2 w-full px-[1%]">
+            <div className="grid grid-cols-[0.28fr_0.7fr] justify-between items-center gap-2 w-full px-[1%]">
               <div className="flex flex-col">
                 <div className="flex gap-3 items-center">
                   <span className="text-nowrap font-bold">
@@ -867,16 +960,18 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                 </div>
               </div>
               <div className="flex gap-3">
-                {" "}
-                {btnAuth && (
+                {postnSelect?.["VALUE1_CHAR"] === "Y" && (
+                  <div className="mainInput">
+                    <Btn
+                      txt="마감"
+                      type="CLOSE"
+                      onClick={() => setWorkM010_017()}
+                    />
+                  </div>
+                )}
+                {postnSelect?.["VALUE2_CHAR"] === "Y" && (
                   <>
-                    <div className="mainInput">
-                      <Btn
-                        txt="마감"
-                        type="CLOSE"
-                        onClick={() => setWorkM010_017()}
-                      />
-                    </div>
+                    {" "}
                     <div className="mainInput w-[30%]">
                       <CommonInput
                         id="approveDay"
@@ -898,6 +993,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                     <div />
                   </>
                 )}
+
                 <div className="mainInput">
                   <Btn txt="저장" type="SAVE" onClick={() => saveClick()} />
                 </div>
@@ -1180,9 +1276,9 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                                 className={`w-[10%] rounded-md border-2 ${
                                   grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
                                     "HR_STATUS"
-                                  ] === 0
-                                    ? "border-transparent"
-                                    : "border-[#36004D]"
+                                  ]
+                                    ? "border-[#36004D]"
+                                    : "border-transparent"
                                 }`}
                               />
                             </div>
@@ -1224,6 +1320,13 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
               focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500`}
                               onClick={(e) => {
                                 e.stopPropagation();
+                                console.log(inputRef.current);
+                                if (inputRef.current) {
+                                  sendErr(
+                                    "여러 터미널 선택 시 변경 불가능합니다.",
+                                  );
+                                  return;
+                                }
                                 workBtnClick(e, "INPUT", i, idx, 0);
                               }}>
                               <input
@@ -1488,7 +1591,14 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
               ref={detailTbRef}>
               <CommonContainer title="세부사항" width="100%">
                 <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                  <div />
+                  <div className="mainInput">
+                    <CommonInput
+                      id="detailStatus"
+                      label="최신상태"
+                      value={detail.row?.[0]?.["DETAIL_STATUS_NAME"] || ""}
+                      read={true}
+                    />
+                  </div>
                   <div className="mainInput">
                     <CommonInput
                       id="detailWork"
@@ -1534,9 +1644,9 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                       id="detailTime"
                       label="현재 시간 외"
                       value={
-                        (detail.row?.[0]?.["REQ_START_TIME"] || "0000") +
+                        (detail.row?.[0]?.["REQ_START_TIME"] || "XXXX") +
                         " ~ " +
-                        (detail.row?.[0]?.["REQ_END_TIME"] || "0000")
+                        (detail.row?.[0]?.["REQ_END_TIME"] || "XXXX")
                       }
                       read={true}
                     />
@@ -1546,9 +1656,9 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                       id="detailTime2"
                       label="다음 시간 외"
                       value={
-                        (detail.row?.[1]?.["REQ_START_TIME"] || "0000") +
+                        (detail.row?.[1]?.["REQ_START_TIME"] || "XXXX") +
                         " ~ " +
-                        (detail.row?.[1]?.["REQ_END_TIME"] || "0000")
+                        (detail.row?.[1]?.["REQ_END_TIME"] || "XXXX")
                       }
                       read={true}
                     />

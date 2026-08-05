@@ -49,6 +49,7 @@ const errSlice = createSlice({
     clearAllErr(state) {
       state.queue = [];
       state.rd = false;
+      state.orgQue = [];
     },
   },
 });

@@ -51,7 +51,10 @@ export function Btn({
         <div
           title={tooltip}
           className={`z-5 w-fit h-[100%] flex p-[0.2rem] justify-center items-center rounded-md bg-[var(--bg)]`}
-          onClick={handleClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClick();
+          }}
           style={
             {
               "--bg": type && setColor(type),
@@ -76,7 +79,10 @@ export function Btn({
         <div
           title={tooltip}
           className={`z-5 w-fit h-[100%] flex justify-center items-center rounded-md bg-[var(--bg)] duration-100 active:scale-90`}
-          onClick={handleClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClick();
+          }}
           style={
             {
               "--bg": type && setColor(type),
