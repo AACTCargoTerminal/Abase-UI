@@ -7,7 +7,7 @@ import {
   type TableRow,
   type ToggleType,
 } from "../../Util/Type";
-import { getApi, getInt, sendErr } from "../../Util/Util";
+import { getApi, getInt, isValidDate, sendErr } from "../../Util/Util";
 import { CommonContainer } from "../../comp/Container";
 import { TableCust2 } from "../../comp/Table";
 import { commonHeader2 } from "../../Util/Header";
@@ -187,7 +187,7 @@ export default function UserResourceMgm({
 
     Object.keys(hrwdtSelect).forEach((v) => {
       if (hrwdtSelect?.[v]) {
-        if (hrwdtSelect?.[v]?.["VALUE1"]) {
+        if (isValidDate(hrwdtSelect?.[v]?.["VALUE1"])) {
           tableTmp.push({
             CLASS_CODE: "HRWDT",
             CODE_CODE: v,
@@ -223,6 +223,11 @@ export default function UserResourceMgm({
       hrpatSelect?.["CODE_CODE"] &&
       hrpatSelect?.["VALUE1"]
     ) {
+      if (!isValidDate(hrpatSelect?.["VALUE1"])) {
+        sendErr("부서 발령일을 확인해주세요");
+        return;
+      }
+
       tableTmp.push({
         CLASS_CODE: "HRPAT",
         YYYY: "0000",
@@ -524,7 +529,7 @@ export default function UserResourceMgm({
             </div>
           );
         })}
-        <div className="mainInput col-span-2 grid grid-cols-[0.6fr_0.4fr] gap-3">
+        <div className="mainInput col-span-2 grid grid-cols-[0.6fr_0.35fr] gap-3">
           {" "}
           <CommonDropDown
             title="부서"
@@ -545,14 +550,21 @@ export default function UserResourceMgm({
             }}
             find={true}
           />
-          <CommonDatePicker
+          <DateInput
+            id={`hrpatDate`}
+            onChange={(s) => {
+              setHrpatSelect((prev) => ({ ...prev, VALUE1: s }));
+            }}
+            value={hrpatSelect?.["VALUE1"] || ""}
+          />
+          {/* <CommonDatePicker
             id={`hrpatDate`}
             onClick={(s) => {
               setHrpatSelect((prev) => ({ ...prev, VALUE1: s }));
             }}
             arrowNo={false}
             value={hrpatSelect?.["VALUE1"] || ""}
-          />
+          /> */}
         </div>
 
         <div className="mainInput flex gap-11">

@@ -4,7 +4,7 @@ export const commonHeader: TableHeaderType[] = [
 ];
 
 export const commonHeader2: TableHeaderType[] = [
-  { key: "CODE_NAME", value: "", w: "10rem" },
+  { key: "CODE_NAME", value: "", w: "12rem" },
 ];
 
 export const commonHeader3: TableHeaderType[] = [

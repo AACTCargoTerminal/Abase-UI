@@ -14,6 +14,7 @@ import type { RootState } from "./slices/store";
 import { useNavigate } from "react-router-dom";
 import { changeAutoFlag, clearAll, clearAllUser } from "./slices/user";
 import imgLogin from "./assets/images/loginImg.png";
+import { clearAllErr } from "./slices/err";
 const header: TableHeaderType[] = [
   { key: "CODE_NAME", value: "코드명", w: "18.5rem", type: "STR" },
 ];
@@ -63,6 +64,7 @@ export default function Root() {
     if (res.ok) {
       await logout();
       dispatch(clearAll());
+      dispatch(clearAllErr());
     } else {
       document.getElementById("loginId")?.focus();
     }
@@ -87,6 +89,7 @@ export default function Root() {
 
   const click = async () => {
     dispatch(clearAll());
+    dispatch(clearAllErr());
     const param = new Map<string, string>();
     if (!formData.username) {
       sendErr("사용자 아이디를 입력하여주세요.");

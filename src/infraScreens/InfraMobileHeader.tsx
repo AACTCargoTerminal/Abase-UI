@@ -25,7 +25,7 @@ const InfraMobileHeader = () => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   return (
     <div>
-      <header className="fixed z-[999] top-0 left-0 flex justify-between items-center h-[7%] w-screen bg-[#1E1F2A] px-4 border-b border-gray-300 shadow-md">
+      <header className="fixed z-[999] top-0 left-0 flex justify-between items-center h-[6.5%] w-screen bg-[#1E1F2A] px-4 border-b border-gray-300 shadow-md">
         <div className="flex items-center gap-3">
           <IoIosMenu
             className="text-white size-[1.8rem] active:text-blue-300 active:scale-[90%]"
