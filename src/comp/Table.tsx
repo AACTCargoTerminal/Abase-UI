@@ -1718,6 +1718,7 @@ const CellCust2 = React.memo(
             />
           );
         }
+        break;
       }
 
       default: {
