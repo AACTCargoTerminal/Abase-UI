@@ -32,7 +32,7 @@ const InfraMobileMenu = ({
     });
 
     if (res.ok) {
-      navigate("/Infra");
+      navigate("/");
     }
   }
   const menu = useSelector((s: RootState) => s.user.menu);

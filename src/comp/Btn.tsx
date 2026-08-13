@@ -69,7 +69,7 @@ export function Btn({
               } as React.CSSProperties
             }>
             <span
-              className="tracking-[0.1rem] px-[0.5rem]"
+              className="tracking-[0.1rem] px-[0.5rem] text-nowrap"
               style={{ userSelect: "none" }}>
               {txt}
             </span>

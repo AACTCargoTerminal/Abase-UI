@@ -16,13 +16,22 @@ import type {
   ToggleType,
 } from "../../Util/Type";
 import { CommonContainer } from "../../comp/Container";
-import { getApi, getClass, getClassValue, openModal } from "../../Util/Util";
+import {
+  getApi,
+  getClass,
+  getClassValue,
+  openModal,
+  sendErr,
+  sendLoading,
+} from "../../Util/Util";
 import { CommonDropDown } from "../../comp/DropDown";
 import { commonHeader2 } from "../../Util/Header";
 import { CommonInput } from "../../comp/Input";
 import { ToggleBtn } from "../../comp/Common";
 import { Btn } from "../../comp/Btn";
 import { TableCust } from "../../comp/Table";
+import dayjs from "dayjs";
+import { setUserGroupFile } from "../work/WorkUtil";
 
 const YESNO: ToggleType[] = [
   { key: "Y", value: "예" },
@@ -63,7 +72,7 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
     }, []);
     useImperativeHandle(ref, () => ({
       onModalPayload(payload: TableRow) {
-        if (payload["CLOSE"] === "CLOSE") {
+        if (payload["CLOSE"] === "CLOSE" || payload["SEARCH"] === "SEARCH") {
           searchClick();
         }
       },
@@ -112,9 +121,80 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
       return () => window.removeEventListener("keyup", handler, true);
     }, [searchClick]);
 
+    async function getExcel() {
+      sendLoading(true);
+      const ret = await getApi<string>({
+        baseUrl: "AUTH",
+        method: "GET",
+        url: `/user/getUserGroup`,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+      sendLoading(false);
+
+      if (ret.ok) {
+        if (ret.data) {
+          const base64 = ret.data;
+
+          const byteCharacters = atob(base64);
+
+          const byteNumbers = new Array(byteCharacters.length);
+
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+
+          const blob = new Blob([byteArray], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+
+          const a = document.createElement("a");
+
+          a.href = url;
+          a.download = `${dayjs().format("YYYY_MM_DD")}재직자목록.xlsx`;
+
+          document.body.appendChild(a);
+
+          a.click();
+
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }
+
+    async function uploadClick(e: React.ChangeEvent<HTMLInputElement>) {
+      const fileRet = await setUserGroupFile({ e: e });
+
+      if (fileRet === null) {
+        sendErr("파일 읽는 중 오류발생");
+        return;
+      }
+
+      sendLoading(true);
+      const ret = await getApi<Record<number, TableRow[]>>({
+        baseUrl: "AUTH",
+        method: "POST",
+        url: `/user/setUserGroup`,
+        params: fileRet,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+      sendLoading(false);
+
+      if (ret.ok) {
+        await searchClick();
+      }
+    }
+
     return (
       <div className="flex flex-col gap-5 py-[0.5%]">
-        <CommonContainer title="조회 및 버튼" width="70%">
+        <CommonContainer title="조회 및 버튼" width="80%">
           <div className="grid grid-cols-[20%_20%_20%_10%_10%] items-center gap-6">
             <div className="mainInput">
               <CommonDropDown
@@ -185,6 +265,20 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
                   });
                 }}
               />
+              <Btn
+                txt="Excel"
+                type="EXCEL"
+                onClick={() => {
+                  getExcel();
+                }}
+              />
+              <Btn
+                txt="Upload"
+                type="NONE"
+                onClick={() => {
+                  document.getElementById("excelFile")?.click();
+                }}
+              />
             </div>
           </div>
         </CommonContainer>
@@ -223,6 +317,13 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
             }}
           />
         </CommonContainer>
+        <input
+          id="excelFile"
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={(e) => uploadClick(e)}
+          className="hidden"
+        />
       </div>
     );
   },

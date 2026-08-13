@@ -80,7 +80,7 @@ const InfraSide = () => {
                             dispatch(selectNav(vr));
                           }}
                           className="text-[#e5e7eb] text-nowrap font-bold h-[5vh] flex items-center cursor-pointer border-b-1 border-[#e5e7eb] justify-between px-[5%] hover:bg-[#3F3F46]">
-                          {vr["MENU_NAME"]}
+                          {"- " + vr["MENU_NAME"]}
                         </div>
                       );
                     })}

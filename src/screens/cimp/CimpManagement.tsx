@@ -1689,7 +1689,6 @@ const CimpManagement = forwardRef<PageHandle, DefComp>(
                   return v;
                 }}
                 changeValue={(i, k, v) => {
-                  console.log(i, k);
                   setChangeGrid3((prev) =>
                     setTableChange({
                       changeData: prev,

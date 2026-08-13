@@ -153,8 +153,9 @@ export default function UserResourceMgm({
       });
       if (res.ok) {
         clear();
+        await searchClick();
+        outParam?.({ SEARCH: "SEARCH" });
       }
-      await searchClick();
     },
     [userSid, yesNo],
   );
@@ -289,6 +290,7 @@ export default function UserResourceMgm({
     if (res.ok) {
       clear();
       searchClick();
+      outParam?.({ SEARCH: "SEARCH" });
     }
   }, [
     hrcosSelect,

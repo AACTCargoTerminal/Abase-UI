@@ -155,6 +155,11 @@ export default function UserModal({
       sucFlag: true,
     });
     setUserParam(map.get("USER_ID"));
+
+    if (ret.ok) {
+      outParam?.({ SEARCH: "SEARCH" });
+      onClose();
+    }
   }, [dt]);
 
   return (
