@@ -1320,7 +1320,6 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
               focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                console.log(inputRef.current);
                                 if (inputRef.current) {
                                   sendErr(
                                     "여러 터미널 선택 시 변경 불가능합니다.",

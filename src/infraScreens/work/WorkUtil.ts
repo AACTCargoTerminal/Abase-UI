@@ -2499,3 +2499,206 @@ export const setTimeExcelFile = ({
     reader.readAsArrayBuffer(file);
   });
 };
+
+interface PositionUser {
+  terminalCode: string;
+  teamName: string;
+  teamCode: string;
+  position: string;
+}
+
+interface TeamUser {
+  terminalCode: string;
+  userId: string;
+  groupJoinDate: string;
+  joinDate: string;
+  userName: string;
+  workType: string;
+  workType2: string;
+  positionList: PositionUser[];
+}
+
+interface TeamGroup {
+  teamName: string;
+  teamCode: string;
+  userArray: TeamUser[];
+}
+
+interface TeamData {
+  teamGroup: TeamGroup[];
+}
+
+//사용자 관리 일괄 업로드
+export const setUserGroupFile = ({
+  e,
+}: {
+  e: React.ChangeEvent<HTMLInputElement>;
+}): Promise<Map<string, any> | null> => {
+  return new Promise((resolve) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      sendErr(`파일이 없습니다.`);
+      resolve(null);
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (evt) => {
+      try {
+        const data = evt.target?.result;
+        if (!data) {
+          sendErr("데이터가 없습니다.");
+          resolve(null);
+          return;
+        }
+
+        const workbook = XLSX.read(data, { type: "array" });
+        const findSheet1 = workbook.SheetNames.find((wv) => wv === "SHEET1");
+
+        if (!findSheet1) {
+          sendErr(`SHEET1의 시트가 없습니다.`);
+          resolve(null);
+          return;
+        }
+
+        const findSheet2 = workbook.SheetNames.find((wv) => wv === "SHEET2");
+
+        if (!findSheet2) {
+          sendErr(`SHEET2의 시트가 없습니다.`);
+          resolve(null);
+          return;
+        }
+
+        const ws = workbook.Sheets[findSheet1];
+        const ws2 = workbook.Sheets[findSheet2];
+        let msg = "";
+
+        const rows = XLSX.utils
+          .sheet_to_json<any[]>(ws, {
+            header: 1,
+            defval: "",
+            range: 6,
+            raw: false,
+          })
+          .filter((row) =>
+            row.some(
+              (cell) => cell !== "" && cell !== null && cell !== undefined,
+            ),
+          );
+
+        const rows2 = XLSX.utils
+          .sheet_to_json<any[]>(ws2, {
+            header: 1,
+            defval: "",
+            range: 6,
+            raw: false,
+          })
+          .filter((row) =>
+            row.some(
+              (cell) => cell !== "" && cell !== null && cell !== undefined,
+            ),
+          );
+        var tmpTeamCode = "";
+        var tmpTeamName = "";
+
+        const tmpGroup: TeamGroup[] = [];
+
+        rows.forEach((v, i) => {
+          if (tmpTeamCode !== v[0] && v[0] !== "") {
+            tmpTeamCode = v[0];
+            tmpTeamName = v[1];
+          }
+          const findGroup = tmpGroup.find((gv) => gv.teamCode === tmpTeamCode);
+
+          const findRows2 = rows2.filter((rv) => rv[4] === v[4]);
+
+          const positionTmp: PositionUser[] = findRows2.map((rv) => ({
+            teamCode: rv[0],
+            teamName: rv[1],
+            terminalCode: rv[2],
+            position: rv[5],
+          }));
+
+          if (!findGroup) {
+            tmpGroup.push({
+              teamCode: tmpTeamCode,
+              teamName: tmpTeamName,
+              userArray: [
+                {
+                  terminalCode: v[2],
+                  userName: v[3],
+                  userId: v[4],
+                  groupJoinDate: normalizeDate(v[5]),
+                  joinDate: normalizeDate(v[6]),
+                  workType: v[7],
+                  workType2: v[8],
+                  positionList: positionTmp,
+                },
+              ],
+            });
+          } else {
+            findGroup.userArray.push({
+              terminalCode: v[2],
+              userName: v[3],
+              userId: v[4],
+              groupJoinDate: normalizeDate(v[5]),
+              joinDate: normalizeDate(v[6]),
+              workType: v[7],
+              workType2: v[8],
+              positionList: positionTmp,
+            });
+          }
+        });
+
+        const map = new Map<string, any>();
+        map.set("teamGroup", tmpGroup);
+        resolve(map);
+      } catch (err: any) {
+        sendErr(err?.message || String(err));
+        resolve(null);
+      } finally {
+        e.target.value = "";
+      }
+    };
+
+    reader.onerror = () => {
+      sendErr("엑셀 파일을 읽는 중 오류가 발생했습니다.");
+      e.target.value = "";
+      resolve(null);
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+};
+
+const normalizeDate = (value: any) => {
+  if (!value) return "";
+
+  const str = String(value).trim();
+
+  // 이미 YYYYMMDD 형태면 그대로
+  if (/^\d{8}$/.test(str)) {
+    return str;
+  }
+
+  // 2/3/26 또는 02/03/2026 형태
+  const match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+
+  if (match) {
+    let [, month, day, year] = match;
+
+    if (year.length === 2) {
+      year = `20${year}`;
+    }
+
+    return year + month.padStart(2, "0") + day.padStart(2, "0");
+  }
+
+  // 2026-02-03 형태
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(str)) {
+    return str.replaceAll("-", "");
+  }
+
+  return str;
+};
