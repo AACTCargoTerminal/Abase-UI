@@ -1032,7 +1032,6 @@ export const TableCust2 = React.memo(
             },
             {} as TableRow,
           );
-
           return [{ ...emptyRow, NEW_FLAG: "Y", EDIT_FLAG: "Y" }, ...prev];
         });
       },
@@ -1407,17 +1406,15 @@ export const TableCust2 = React.memo(
                       );
                     } else {
                       if (batch) {
-                        if (r[k] !== v) {
-                          setCopBody((prev) => {
-                            return prev.map((prevV, prevI) => {
-                              if (prevI === idx) {
-                                return { ...prevV, [k]: v, EDIT_FLAG: "Y" };
-                              } else {
-                                return prevV;
-                              }
-                            });
+                        setCopBody((prev) => {
+                          return prev.map((prevV, prevI) => {
+                            if (prevI === idx) {
+                              return { ...prevV, [k]: v, EDIT_FLAG: "Y" };
+                            } else {
+                              return prevV;
+                            }
                           });
-                        }
+                        });
                       } else {
                         changeValue?.(idx, k, v);
                       }
