@@ -1406,6 +1406,7 @@ export const TableCust2 = React.memo(
                       );
                     } else {
                       if (batch) {
+                        console.log(v);
                         setCopBody((prev) => {
                           return prev.map((prevV, prevI) => {
                             if (prevI === idx) {
