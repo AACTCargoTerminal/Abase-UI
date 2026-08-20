@@ -14,7 +14,7 @@ import {
 } from "../../Util/Util";
 import moment from "moment";
 import { Btn } from "../../comp/Btn";
-import { CommonContainer, CommonTab } from "../../comp/Container";
+import { CommonContainer, CommonTab, SubDiv } from "../../comp/Container";
 import React, {
   forwardRef,
   useCallback,
@@ -35,19 +35,20 @@ import { LuSquarePlus } from "react-icons/lu";
 import type { Root } from "react-dom/client";
 import { getExcelFile, setExcelFile } from "./WorkUtil";
 import { selectNav } from "../../slices/user";
+import { TbCheckbox } from "react-icons/tb";
 dayjs.locale("ko");
 
 const HRREQ_HEADER = [
-  "#F97316",
-  "#F59E0B",
-  "#3B82F6",
-  "#22C55E",
-  "#6B7280",
-  "#EF4444",
-  "#8B5CF6",
-  "#6366F1",
-  "#8B0000",
-  "#6D4C41",
+  "#F97316", //OT 관리자 신청
+  "#F59E0B", //검토취소
+  "#3B82F6", // OT보류
+  "#22C55E", // 스케줄 확정 취소
+  "#6B7280", // OT 확정
+  "#EF4444", // OT 신청완료
+  "#8B5CF6", // OT 인사팀 요청
+  "#6366F1", // OT 스케줄 인사팀 요청
+  "#8B0000", // OT 거절
+  "#6D4C41", // 인사팀 검토완료
 ];
 
 const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
@@ -157,11 +158,6 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       const data = await getClass("HRREQ", pgmId);
       const tmp = data.filter((v) => v?.["VALUE1_CHAR"] === "Y");
       setHrreq(tmp);
-      const tmpHeader: TableRow = tmp.reduce((acc, v, i) => {
-        acc[v["CODE_CODE"]] = HRREQ_HEADER[i];
-        return acc;
-      }, {} as TableRow);
-      setHrreqHeader(tmpHeader);
     }
 
     async function getHRPAT() {
@@ -904,11 +900,33 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
             </div>
           </CommonContainer>
         </div>
-
+        <CommonContainer title="상태">
+          <div>
+            <div className="flex h-[1rem] items-center">
+              <div className="flex flex-wrap gap-x-3 items-center">
+                {hrreq.map((hv, i) => {
+                  return (
+                    <div key={i} className="flex gap-2 items-center mainInput">
+                      <div
+                        className="size-3 shrink-0"
+                        style={{
+                          backgroundColor: hv?.["VALUE5_CHAR"],
+                        }}
+                      />
+                      <span className="text-nowrap">
+                        {hv?.["CODE_NAME2"] || ""}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </CommonContainer>
         <CommonContainer
           title="근무표"
           childrenTitle={
-            <div className="grid grid-cols-[0.28fr_0.7fr] justify-between items-center gap-2 w-full px-[1%]">
+            <div className="grid grid-cols-[0.4fr_0.55fr] justify-between items-center gap-2 w-full px-[1%]">
               <div className="flex flex-col">
                 <div className="flex gap-3 items-center">
                   <span className="text-nowrap font-bold">
@@ -942,21 +960,6 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                     <div className="size-3 bg-[#36004D]"></div>
                     <span className="text-nowrap">인사설정</span>
                   </div>
-                </div>
-                <div className="flex gap-3 items-center">
-                  <span className="text-nowrap font-bold">--- 상태</span>
-                  {hrreq.map((hv, i) => {
-                    return (
-                      <div className="flex gap-2 items-center mainInput">
-                        <div
-                          className={`size-3`}
-                          style={{ backgroundColor: HRREQ_HEADER[i] }}></div>
-                        <span className="text-nowrap">
-                          {hv?.["CODE_NAME2"] || ""}
-                        </span>
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
               <div className="flex gap-3">
@@ -1011,7 +1014,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
             </div>
           }>
           <div
-            className="rounded-md h-[35rem] w-full overflow-x-auto"
+            className="rounded-md h-[29.5rem] w-full overflow-x-auto"
             style={{ scrollbarGutter: "stable" }}
             onScroll={() => {
               setOpcodCss({
@@ -1289,24 +1292,30 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                                 ]
                                   ? "border-transparent"
                                   : `border-${
-                                      hrreqHeader[
-                                        grid1Dt?.[v["USER_SID"]]?.[
-                                          idx + 1
-                                        ]?.[0]?.["DETAIL_STATUS"]
-                                      ]
+                                      hrreq.find(
+                                        (fv) =>
+                                          fv?.["CODE_CODE"] ===
+                                          grid1Dt?.[v["USER_SID"]]?.[
+                                            idx + 1
+                                          ]?.[0]?.["DETAIL_STATUS"],
+                                      )?.["VALUE5_CHAR"]
                                     }`
                               }`}
                               style={{
-                                borderColor: hrreqHeader?.[
-                                  grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
-                                    "DETAIL_STATUS"
-                                  ]
-                                ]
-                                  ? hrreqHeader[
-                                      grid1Dt?.[v["USER_SID"]]?.[
-                                        idx + 1
-                                      ]?.[0]?.["DETAIL_STATUS"]
-                                    ]
+                                borderColor: hrreq.find(
+                                  (fv) =>
+                                    fv?.["CODE_CODE"] ===
+                                    grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                      "DETAIL_STATUS"
+                                    ],
+                                )?.["VALUE5_CHAR"]
+                                  ? hrreq.find(
+                                      (fv) =>
+                                        fv?.["CODE_CODE"] ===
+                                        grid1Dt?.[v["USER_SID"]]?.[
+                                          idx + 1
+                                        ]?.[0]?.["DETAIL_STATUS"],
+                                    )?.["VALUE5_CHAR"]
                                   : "transparent",
                               }}></div>
                             <div
