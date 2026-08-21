@@ -306,6 +306,7 @@ export default function WorkTimeInsert({
               const tmp = floorTo30(v);
               if (tmp) {
                 setCapsStartTime(tmp);
+                document.getElementById("capsEndTime")?.focus();
               }
             }}
           />
@@ -331,6 +332,9 @@ export default function WorkTimeInsert({
               const tmp = floorTo30(v);
               if (tmp) {
                 setCapsEndTime(tmp);
+                if (manualFlag) {
+                  document.getElementById("addhour")?.focus();
+                }
               }
             }}
           />
@@ -346,6 +350,7 @@ export default function WorkTimeInsert({
               onChange={(v) => {
                 const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
                 setAddhour(Math.ceil(Number(tmp) * 2) / 2.0);
+                document.getElementById("nightHour")?.focus();
               }}
               label="연장근무"
               labelW="50%"
@@ -359,6 +364,7 @@ export default function WorkTimeInsert({
               onChange={(v) => {
                 const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
                 setNighthour(Math.ceil(Number(tmp) * 2) / 2.0);
+                document.getElementById("holiHour")?.focus();
               }}
               label="야간근무"
               labelW="50%"
@@ -372,6 +378,7 @@ export default function WorkTimeInsert({
               onChange={(v) => {
                 const tmp = confirmObj({ type: "DOUBLE", fix: 1, obj: v });
                 setholihour(Math.ceil(Number(tmp) * 2) / 2.0);
+                document.getElementById("holiAddHour")?.focus();
               }}
               label="휴일근무"
               labelW="50%"

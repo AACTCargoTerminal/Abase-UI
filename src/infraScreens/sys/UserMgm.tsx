@@ -310,7 +310,10 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
                   {
                     id: "USERMODAL",
                     name: "사용자 관리",
-                    param: { userId: v["USER_ID"] },
+                    param: {
+                      userId: v["USER_ID"],
+                      userSid: v?.["USER_SID"] || 0,
+                    },
                   },
                 ],
               });

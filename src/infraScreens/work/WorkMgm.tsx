@@ -281,6 +281,12 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
     }, [detailOpen]);
 
     useEffect(() => {
+      if (hrmtr.length > 1) {
+        document.getElementById("terminal")?.click();
+      }
+    }, [hrmtr]);
+
+    useEffect(() => {
       const tmp: Record<number, boolean> = {};
       grid1.forEach((v) => {
         if (v["USER_SID"]) {

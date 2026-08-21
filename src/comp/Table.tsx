@@ -1062,6 +1062,13 @@ export const TableCust2 = React.memo(
         );
         return editedRows;
       },
+      bgClear() {
+        if (selectedRowIndexRef.current !== -1 && rowRefs !== null) {
+          rowRefs.current[selectedRowIndexRef.current]!.style.backgroundColor =
+            "";
+          selectedRowIndexRef.current = -1;
+        }
+      },
     }));
     const containerRef = useRef<HTMLDivElement>(null);
 

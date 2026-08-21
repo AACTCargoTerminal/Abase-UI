@@ -120,6 +120,7 @@ export const CommonDropDown = React.memo(
       y: containerRef.current?.getBoundingClientRect().left,
     });
     const scrollParentRef = useRef<Window | HTMLElement | null>(null);
+    const findRef = useRef<HTMLInputElement>(null);
     const toPx = (v: string) => {
       const s = String(v).trim();
       if (s.endsWith("px")) return parseFloat(s);
@@ -235,9 +236,13 @@ export const CommonDropDown = React.memo(
 
           return next;
         });
+
         if (find) {
           setFilterTxt("");
-          document.getElementById("findDoc")?.focus();
+
+          requestAnimationFrame(() => {
+            findRef.current?.focus();
+          });
         }
       }
     };
@@ -420,7 +425,7 @@ export const CommonDropDown = React.memo(
                     onChange={(e) => {
                       setFilterTxt(e.target.value);
                     }}
-                    id="findDoc"
+                    ref={findRef}
                     placeholder="Find"
                     autoComplete="off"
                     onKeyDown={(e) => {

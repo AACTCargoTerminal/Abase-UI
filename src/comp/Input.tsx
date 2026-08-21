@@ -485,7 +485,10 @@ export function TimeInput({
   }, [displayValue]);
 
   const getTimeRegex = (type: "HH:mm" | "HH:mm:ss") => {
-    if (type === "HH:mm:ss") return /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/;
+    if (type === "HH:mm:ss") {
+      return /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/;
+    }
+
     return /^(?:[01]\d|2[0-3]):[0-5]\d$/;
   };
 
@@ -499,7 +502,7 @@ export function TimeInput({
     const selectTmp = e.target.selectionStart;
 
     if (selectTmp === null) return;
-    // 기본값: 현재 표시값, 없으면 00:00 / 00:00:00
+
     const safeValue =
       displayValue && displayValue.length > 0
         ? displayValue
@@ -508,10 +511,21 @@ export function TimeInput({
           : "00:00:00";
 
     const targetTmp = e.target.value;
+
+    // 잘못된 입력일 경우 커서 복구용
+    const restoreCaret = (pos: number) => {
+      requestAnimationFrame(() => {
+        inputRef.current?.setSelectionRange(pos, pos);
+      });
+    };
+
     if (targetTmp.length <= 1) {
       const digits = targetTmp.replace(/\D/g, "");
 
-      if (digits.length === 0) return;
+      if (digits.length === 0) {
+        restoreCaret(0);
+        return;
+      }
 
       const maxLen = type === "HH:mm" ? 4 : 6;
       const padded = digits.padEnd(maxLen, "0").slice(0, maxLen);
@@ -521,8 +535,18 @@ export function TimeInput({
           ? `${padded.slice(0, 2)}:${padded.slice(2, 4)}`
           : `${padded.slice(0, 2)}:${padded.slice(2, 4)}:${padded.slice(4, 6)}`;
 
+      // 잘못된 시간값이면 값 변경 X + 커서 복구
+      if (!getTimeRegex(type).test(changeValue)) {
+        restoreCaret(0);
+        return;
+      }
+
       const m = moment(changeValue, type, true);
-      if (!m.isValid()) return;
+
+      if (!m.isValid()) {
+        restoreCaret(0);
+        return;
+      }
 
       const formatted = m.format(type);
 
@@ -538,91 +562,115 @@ export function TimeInput({
       nextCaretPosRef.current = nextPos;
       setDisplayValue(formatted);
 
-      // 값이 기존값과 같으면 useEffect가 안 타니까 직접 커서 이동
       if (formatted === displayValue) {
-        requestAnimationFrame(() => {
-          inputRef.current?.setSelectionRange(nextPos, nextPos);
-        });
+        restoreCaret(nextPos);
       }
 
       return;
-    } else {
-      const insertTmp = targetTmp.slice(selectTmp - 1, selectTmp);
-      const onlyNumber = /^[0-9]+$/;
+    }
 
-      let changeValue = safeValue;
-      let nextPos = selectTmp;
+    const insertTmp = targetTmp.slice(selectTmp - 1, selectTmp);
+    const onlyNumber = /^[0-9]+$/;
 
-      if (displayValue.length > targetTmp.length) {
-        let replaceIndex = selectTmp;
+    let changeValue = safeValue;
+    let nextPos = selectTmp;
 
-        // 만약 그 자리가 ':' 이면 한 칸 왼쪽 자리 숫자를 0으로 바꾼다
-        if (safeValue[replaceIndex] === ":") {
-          replaceIndex = replaceIndex - 1;
-        }
+    if (displayValue.length > targetTmp.length) {
+      // ========================
+      // Backspace / Delete
+      // ========================
 
-        // 범위 방어
-        if (replaceIndex < 0 || replaceIndex >= safeValue.length) return;
-        if (safeValue[replaceIndex] === ":") return; // 여전히 ':'이면 그냥 무시
+      let replaceIndex = selectTmp;
 
-        // 그 자리를 '0'으로 채우기
-        changeValue =
-          safeValue.slice(0, replaceIndex) +
-          "0" +
-          safeValue.slice(replaceIndex + 1);
-
-        // 커서는 "한 칸 뒤"로
-        nextPos = replaceIndex;
-
-        // 콜론 위치는 뛰어넘기 (왼쪽으로 갈 때)
-        if (type === "HH:mm") {
-          // HH:mm 에서 ':' 인덱스는 2
-          if (nextPos === 2) nextPos = 1;
-        } else {
-          // HH:mm:ss 에서 ':' 인덱스는 2, 5
-          if (nextPos === 2) nextPos = 1;
-          if (nextPos === 5) nextPos = 4;
-        }
-      } else {
-        // 숫자만 허용
-        if (!onlyNumber.test(insertTmp)) {
-          return;
-        }
-        changeValue =
-          safeValue.slice(0, selectTmp - 1) +
-          insertTmp +
-          safeValue.slice(selectTmp);
-
-        // 다음 칸으로 커서 이동
-        nextPos = selectTmp;
-        if (type === "HH:mm") {
-          if (nextPos === 2) nextPos = 3; // ':' 건너뛰기
-        } else {
-          if (nextPos === 2) nextPos = 3;
-          if (nextPos === 5) nextPos = 6;
-        }
+      if (safeValue[replaceIndex] === ":") {
+        replaceIndex = replaceIndex - 1;
       }
 
-      // 시간 포맷 검사
+      if (replaceIndex < 0 || replaceIndex >= safeValue.length) {
+        restoreCaret(selectTmp);
+        return;
+      }
+
+      if (safeValue[replaceIndex] === ":") {
+        restoreCaret(selectTmp);
+        return;
+      }
+
+      changeValue =
+        safeValue.slice(0, replaceIndex) +
+        "0" +
+        safeValue.slice(replaceIndex + 1);
+
+      nextPos = replaceIndex;
+
+      if (type === "HH:mm") {
+        if (nextPos === 2) nextPos = 1;
+      } else {
+        if (nextPos === 2) nextPos = 1;
+        if (nextPos === 5) nextPos = 4;
+      }
+    } else {
+      // ========================
+      // 숫자 입력
+      // ========================
+
+      // 입력 전 실제 커서 위치
+      const originalPos = selectTmp - 1;
+
+      if (!onlyNumber.test(insertTmp)) {
+        restoreCaret(originalPos);
+        return;
+      }
+
+      changeValue =
+        safeValue.slice(0, originalPos) +
+        insertTmp +
+        safeValue.slice(originalPos + 1);
+
+      // 여기서 먼저 시간값 검증
       if (!getTimeRegex(type).test(changeValue)) {
+        restoreCaret(originalPos);
         return;
       }
 
       const m = moment(changeValue, type, true);
+
       if (!m.isValid()) {
+        restoreCaret(originalPos);
         return;
       }
-      const formatted = m.format(type);
-      nextCaretPosRef.current = nextPos;
-      setDisplayValue(formatted);
-      if (formatted === displayValue && inputRef.current) {
-        // React가 value를 다시 세팅한 뒤에 실행되도록 살짝 늦게
-        requestAnimationFrame(() => {
-          if (inputRef.current) {
-            inputRef.current.setSelectionRange(nextPos, nextPos);
-          }
-        });
+
+      // 정상적인 값일 때만 커서 다음칸으로 이동
+      nextPos = selectTmp;
+
+      if (type === "HH:mm") {
+        if (nextPos === 2) nextPos = 3;
+      } else {
+        if (nextPos === 2) nextPos = 3;
+        if (nextPos === 5) nextPos = 6;
       }
+    }
+
+    // 최종 시간 포맷 검사
+    if (!getTimeRegex(type).test(changeValue)) {
+      restoreCaret(selectTmp);
+      return;
+    }
+
+    const m = moment(changeValue, type, true);
+
+    if (!m.isValid()) {
+      restoreCaret(selectTmp);
+      return;
+    }
+
+    const formatted = m.format(type);
+
+    nextCaretPosRef.current = nextPos;
+    setDisplayValue(formatted);
+
+    if (formatted === displayValue) {
+      restoreCaret(nextPos);
     }
   }
 
@@ -687,6 +735,21 @@ export function TimeInput({
             onChange?.(m.format(baseFormat));
           }}
           readOnly={read}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const m = moment(displayValue, type, true);
+
+              if (!m.isValid()) {
+                return;
+              }
+              onChange?.(m.format(baseFormat));
+            }
+          }}
+          onFocus={() => {
+            requestAnimationFrame(() => {
+              inputRef.current?.setSelectionRange(0, 0);
+            });
+          }}
         />
       </div>
     </div>
