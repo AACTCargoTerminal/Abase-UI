@@ -271,6 +271,7 @@ export type TableHandle = {
   cancle: () => void;
   add: () => void;
   getChk: () => Record<number, TableRow>;
+  bgClear: () => void;
 };
 
 export type RowPrepType = {

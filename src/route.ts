@@ -87,6 +87,7 @@ export const MODAL_ROUTE_IMPORTERS = {
   WORK_TIME_INS: () => import("./infraScreens/work/WorkTimeInsert"),
   WORK_HR_REQ_DENY: () => import("./infraScreens/work/WorkHrReqDeny"),
   WORK_TIME_ADM_INS: () => import("./infraScreens/work/WorkTimeAdmInsert"),
+  WORK_HR_CAPS: () => import("./infraScreens/work/WorkHrCaps"),
 } as const;
 
 export type ModalRouteKey = keyof typeof MODAL_ROUTE_IMPORTERS;
@@ -116,6 +117,7 @@ export const MODAL_ROUTE_MAP: Record<
   WORK_TIME_INS: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_TIME_INS),
   WORK_HR_REQ_DENY: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_HR_REQ_DENY),
   WORK_TIME_ADM_INS: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_TIME_ADM_INS),
+  WORK_HR_CAPS: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_HR_CAPS),
 };
 
 export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
@@ -183,6 +185,7 @@ export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
   WORK_TIME_INS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
   WORK_HR_REQ_DENY: [{ type: "SAVE", txt: "저장", actionType: "ALL" }],
   WORK_TIME_ADM_INS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
+  WORK_HR_CAPS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
 };
 
 export const MODAL_SIZE_MAP: Record<
@@ -210,4 +213,5 @@ export const MODAL_SIZE_MAP: Record<
   WORK_TIME_INS: "md",
   WORK_HR_REQ_DENY: "md",
   WORK_TIME_ADM_INS: "md",
+  WORK_HR_CAPS: "md",
 };

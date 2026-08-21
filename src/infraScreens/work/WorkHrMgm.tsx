@@ -1565,13 +1565,36 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
               onClick={async (r) => {
                 return false;
               }}
-              onRowPrepared={(r, i) => {
-                return { cells: { SPLIT: "#8EC5FF" } };
-              }}
-              rightMenu={[{ key: "HOLD_DOC", value: "서류확인" }]}
+              rightMenu={[
+                { key: "HOLD_DOC", value: "서류확인" },
+                { key: "CAPS", value: "캡스확인" },
+              ]}
               rightClick={(k, r) => {
                 if (k === "HOLD_DOC" && r?.["IMG_FLAG"] === "Y") {
                   holdDocClick({ r: r });
+                }
+                if (k === "CAPS") {
+                  if (r?.["DETAIL_STATUS"] === "C") {
+                    sendErr("검토완료상태에서는 캡스 수정이 불가능합니다.");
+                  } else {
+                    openModal({
+                      array: [
+                        {
+                          id: "WORK_HR_CAPS",
+                          name: "캡스조회",
+                          param: {
+                            ADD_DAY: r?.["ADD_DAY"] || "0",
+                            USER_ID: r?.["USER_ID"] || "",
+                            DATE: r?.["REQ_DATE"] || "",
+                            CAPS_START_TIME: r?.["CAPS_START_TIME"] || "XXXX",
+                            CAPS_END_TIME: r?.["CAPS_END_TIME"] || "XXXX",
+                            USER_SID: r?.["USER_SID"] || 0,
+                            SEQ: r?.["SEQ"] || 0,
+                          },
+                        },
+                      ],
+                    });
+                  }
                 }
               }}
               batch={true}
