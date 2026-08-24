@@ -804,6 +804,51 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       }
     }, [hrpatSelect, date, hrmtrSelect]);
 
+    const manualDown = useCallback(async (str: string) => {
+      const ret = await getApi<string>({
+        baseUrl: "INFRA",
+        method: "GET",
+        url: `/work/getManual?fileName=${str}`,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+
+      if (ret.ok) {
+        if (ret.data) {
+          const base64 = ret.data;
+
+          const byteCharacters = atob(base64);
+
+          const byteNumbers = new Array(byteCharacters.length);
+
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+
+          const blob = new Blob([byteArray], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+
+          const a = document.createElement("a");
+
+          a.href = url;
+          a.download = `${dayjs().format("YYYY_MM_DD")}메뉴얼.pdf`;
+
+          document.body.appendChild(a);
+
+          a.click();
+
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }, []);
+
     return (
       <div className="w-full h-full flex flex-col gap-3 py-[0.25%] pr-[0.5%]">
         <div className="grid grid-cols-[3fr_2fr] gap-3 items-start">
@@ -903,6 +948,26 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                   read={true}
                 />
               </div>
+              <div className="mainInput">
+                <Btn
+                  txt="스케줄 메뉴얼"
+                  type="PRINT"
+                  onClick={() => {
+                    manualDown("MANAGE_MANUAL.pdf");
+                  }}
+                />
+              </div>
+              {postnSelect?.["VALUE2_CHAR"] === "Y" && (
+                <div className="mainInput">
+                  <Btn
+                    txt="팀장 메뉴얼"
+                    type="EXCEL"
+                    onClick={() => {
+                      manualDown("LEADER_MANUAL.pdf");
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </CommonContainer>
         </div>
