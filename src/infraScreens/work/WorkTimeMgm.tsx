@@ -189,6 +189,51 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
       }
     }, [grid1Ref.current]);
 
+    const manualDown = useCallback(async () => {
+      const ret = await getApi<string>({
+        baseUrl: "INFRA",
+        method: "GET",
+        url: `/work/getManual?fileName=USER_MANUAL.pdf`,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+
+      if (ret.ok) {
+        if (ret.data) {
+          const base64 = ret.data;
+
+          const byteCharacters = atob(base64);
+
+          const byteNumbers = new Array(byteCharacters.length);
+
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+
+          const blob = new Blob([byteArray], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+
+          const a = document.createElement("a");
+
+          a.href = url;
+          a.download = `${dayjs().format("YYYY_MM_DD")}시간 외 근무 메뉴얼.pdf`;
+
+          document.body.appendChild(a);
+
+          a.click();
+
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }, []);
+
     return (
       <div className="px-[1%]">
         <CommonContainer
@@ -210,6 +255,16 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
                 </div>
               </div>
               <div className="flex gap-2">
+                <div className="mainInput">
+                  <Btn
+                    txt="메뉴얼"
+                    type="PRINT"
+                    deviceType={deviceType}
+                    onClick={() => {
+                      manualDown();
+                    }}
+                  />
+                </div>
                 <div className="mainInput">
                   <Btn
                     txt="조회"
