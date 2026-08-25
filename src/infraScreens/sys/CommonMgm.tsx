@@ -201,7 +201,7 @@ const CommonMgm = forwardRef<PageHandle, DefInfraComp>(
             const tmp = res.data[0][0];
             Object.keys(tmp).forEach((v) => {
               if (v === "CLASS_NAME") {
-                setTitle(tmp[v]);
+                setTitle(`${tmp[v]}( ${params} )`);
               } else {
                 changeGridHeader(v, tmp[v]);
               }
