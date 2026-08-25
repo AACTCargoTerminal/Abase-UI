@@ -9,7 +9,7 @@ import {
 } from "../../Util/Util";
 import { CommonInput, DateInput } from "../../comp/Input";
 import { CommonDatePicker, CommonDropDown } from "../../comp/DropDown";
-import { commonHeader2 } from "../../Util/Header";
+import { commonHeader2, commonHeader6 } from "../../Util/Header";
 import { MdHorizontalRule } from "react-icons/md";
 
 export default function UserModal({
@@ -245,7 +245,7 @@ export default function UserModal({
         <CommonDropDown
           id="trmcd"
           data={trmcd}
-          header={commonHeader2}
+          header={commonHeader6}
           dropHeight="15rem"
           inputKey={{
             key: "CODE_CODE",
@@ -256,7 +256,7 @@ export default function UserModal({
             setDt((prev) => ({
               ...prev,
               ["TERMINAL_CODE"]: v["CODE_CODE"],
-              ["TERMINAL_NAME"]: v["CODE_NAME"],
+              ["TERMINAL_NAME"]: v["CODE_NAME2"],
             }));
           }}
           check={true}
