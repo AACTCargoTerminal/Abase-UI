@@ -23,6 +23,10 @@ export const commonHeader5: TableHeaderType[] = [
   { key: "VALUE3_CHAR", value: "종료시간", w: "5rem" },
 ];
 
+export const commonHeader6: TableHeaderType[] = [
+  { key: "CODE_NAME2", value: "", w: "12rem" },
+];
+
 export const SchChgHeader: TableHeaderType[] = [
   { key: "FLIGHT_NO", value: "Flight No", w: "6rem", type: "STR", sum: 0 },
   { key: "ROUTE_NAME", value: "경로", w: "8rem", type: "STR" },
