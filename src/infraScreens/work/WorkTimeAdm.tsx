@@ -730,7 +730,7 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
           <CommonContainer
             title="보류 리스트"
             childrenTitle={
-              <div className="p-[1%] grid grid-cols-[100px] gap-3">
+              <div className="p-[1%] grid grid-cols-[100px_100px] gap-3">
                 {postnSelect?.["VALUE3_CHAR"] === "Y" && (
                   <div className="mainInput">
                     <Btn
@@ -745,7 +745,7 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
                 <div className="mainInput">
                   <Btn
                     txt="일괄 재처리"
-                    type="NONE"
+                    type="SAVE"
                     onClick={() => {
                       reloadClick();
                     }}
