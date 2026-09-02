@@ -363,6 +363,43 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
       }
     }, [grid1Ref.current]);
 
+    const reloadClick = useCallback(async () => {
+      const tmp = grid1Ref.current?.getChk();
+      if (!tmp || Object.values(tmp).length === 0) {
+        sendErr("선택한 항목이 없습니다.");
+        return;
+      }
+      const tmpArray = Object.values(tmp).map((v) => {
+        return {
+          date: String(v["TIME_DATE"]).replaceAll("-", ""),
+          SEQ: v["SEQ"],
+          USER_SID: v["USER_SID"],
+          LOG_SEQ: v["LOG_SEQ"],
+        };
+      });
+      if (tmpArray.length === 0) {
+        sendErr("항목이 없습니다.");
+        return;
+      }
+      const map = new Map<string, any>();
+      map.set("array", tmpArray);
+      sendLoading(true);
+
+      const res = await getApi<Record<number, TableRow[]>>({
+        baseUrl: "INFRA",
+        method: "POST",
+        url: `/work/setCapsReSave`,
+        params: map,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+
+      sendLoading(false);
+      if (res.ok) {
+        await searchClick();
+      }
+    }, [grid1Ref.current]);
+
     const approveWithPdf = useCallback(
       async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -705,6 +742,15 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
                     />
                   </div>
                 )}
+                <div className="mainInput">
+                  <Btn
+                    txt="일괄 재처리"
+                    type="NONE"
+                    onClick={() => {
+                      reloadClick();
+                    }}
+                  />
+                </div>
               </div>
             }>
             <TableCust2
