@@ -67,6 +67,7 @@ export const INFRA_ROUTE_MAP: Record<
 
 export const MODAL_ROUTE_IMPORTERS = {
   USER_INFO: () => import("./screens/common/UserInfo"),
+  USER_INFO_HR: () => import("./screens/common/UserHrInfo"),
   FSU_ARR: () => import("./screens/cimp/FsuArr"),
   FSU_RCF: () => import("./screens/cimp/FsuRcf"),
   FSU_NFD: () => import("./screens/cimp/FsuNfd"),
@@ -97,6 +98,7 @@ export const MODAL_ROUTE_MAP: Record<
   React.LazyExoticComponent<React.ComponentType<ModalComp>>
 > = {
   USER_INFO: React.lazy(MODAL_ROUTE_IMPORTERS.USER_INFO),
+  USER_INFO_HR: React.lazy(MODAL_ROUTE_IMPORTERS.USER_INFO_HR),
   FSU_ARR: React.lazy(MODAL_ROUTE_IMPORTERS.FSU_ARR),
   FSU_DEP: React.lazy(MODAL_ROUTE_IMPORTERS.FSU_DEP),
   FSU_DIS: React.lazy(MODAL_ROUTE_IMPORTERS.FSU_DIS),
@@ -122,6 +124,7 @@ export const MODAL_ROUTE_MAP: Record<
 
 export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
   USER_INFO: [{ txt: "SAVE", type: "SAVE", actionType: "MODAL" }],
+  USER_INFO_HR: [{ txt: "SAVE", type: "SAVE", actionType: "MODAL" }],
   FSU_ARR: [
     { txt: "SAVE", type: "SAVE", actionType: "MODAL" },
     { txt: "SEND SCREEN", type: "NONE", actionType: "ALL" },
@@ -207,6 +210,7 @@ export const MODAL_SIZE_MAP: Record<
   IFEDI0070: "lg",
   MSITP010: "full",
   USER_INFO: "md",
+  USER_INFO_HR: "md",
   WMSCH0040: "lg",
   USERMODAL: "lg",
   USERRESMGM: "lg",
