@@ -1497,6 +1497,68 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
       }
     }, []);
 
+    const otDelete = useCallback(async () => {
+      const tmp = grid1Ref.current?.getChk();
+
+      if (tmp && Object.keys(tmp).length > 0) {
+        const reqArray = Object.values(tmp).map((v) => ({
+          date: String(v["REQ_DATE"]).replaceAll("-", ""),
+          SEQ: v?.["SEQ"] || 0,
+          USER_SID: v?.["USER_SID"] || 0,
+        }));
+        if (reqArray.length === 0) {
+          sendErr("항목이 없습니다.");
+          return;
+        }
+        const map = new Map<string, any>();
+        map.set("DEL", reqArray);
+
+        sendLoading(true);
+        const ret = await getApi<Record<number, TableRow[]>>({
+          baseUrl: "INFRA",
+          method: "POST",
+          url: `/work/setWorkM010_022?adminFlag=Y`,
+          pgmId: pgmId,
+          sucFlag: true,
+          params: map,
+        });
+        sendLoading(false);
+
+        if (ret.ok) {
+          searchClick({
+            type: "APPR",
+            pgmId: pgmId,
+            fromDate: fromDate,
+            toDate: toDate,
+            deptCode: deptCode,
+            reqFlag: hrreqHrSelect,
+            terminalCode: terminalCode,
+            userName: userName,
+            date: date,
+            dateFlag: dateFlag,
+            otFlag: otFlag ? "Y" : "N",
+          })
+            .then((v) => {
+              setGrid1(v);
+            })
+            .catch((v) => setGrid1([]));
+        }
+      } else {
+        sendErr("선택한 항목이 없습니다.");
+        return;
+      }
+    }, [
+      grid1Ref.current,
+      hrreqHrSelect,
+      fromDate,
+      toDate,
+      deptCode,
+      terminalCode,
+      userName,
+      date,
+      dateFlag,
+    ]);
+
     return (
       <div className="grid grid-rows-[10rem_10rem_1fr] gap-2">
         <div>
@@ -1553,6 +1615,15 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
                     txt="검토취소"
                     type="DELETE"
                     onClick={() => cancelClick()}
+                  />
+                </div>
+                <div className="mainInput">
+                  <Btn
+                    txt="OT 삭제"
+                    type="NONE"
+                    onClick={() => {
+                      otDelete();
+                    }}
                   />
                 </div>
               </div>

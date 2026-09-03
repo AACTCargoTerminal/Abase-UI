@@ -2510,6 +2510,7 @@ interface PositionUser {
 interface TeamUser {
   terminalCode: string;
   userId: string;
+  pass: string;
   groupJoinDate: string;
   joinDate: string;
   userName: string;
@@ -2629,10 +2630,11 @@ export const setUserGroupFile = ({
                   terminalCode: v[2],
                   userName: v[3],
                   userId: v[4],
-                  groupJoinDate: normalizeDate(v[5]),
-                  joinDate: normalizeDate(v[6]),
-                  workType: v[7],
-                  workType2: v[8],
+                  pass: v[5],
+                  groupJoinDate: normalizeDate(v[6]),
+                  joinDate: normalizeDate(v[7]),
+                  workType: v[8],
+                  workType2: v[9],
                   positionList: positionTmp,
                 },
               ],
@@ -2642,10 +2644,11 @@ export const setUserGroupFile = ({
               terminalCode: v[2],
               userName: v[3],
               userId: v[4],
-              groupJoinDate: normalizeDate(v[5]),
-              joinDate: normalizeDate(v[6]),
-              workType: v[7],
-              workType2: v[8],
+              pass: v[5],
+              groupJoinDate: normalizeDate(v[6]),
+              joinDate: normalizeDate(v[7]),
+              workType: v[8],
+              workType2: v[9],
               positionList: positionTmp,
             });
           }

@@ -141,7 +141,7 @@ export default function WorkTimeInsert({
           setParams({
             date: params.date,
             selectDt: tmpDt?.["SEQ"] === undefined ? -1 : tmpDt["SEQ"],
-            userSid: params.userSid,
+            userSid: tmpDt?.["USER_SID"],
           });
         }
         setDt(res.data[0]);
@@ -273,21 +273,33 @@ export default function WorkTimeInsert({
           labelW="25%"
         />
       </div>
-      <div className="mainInput col-span-2">
-        <CommonInput
-          id="workType"
-          value={`${dayjs(
-            dt?.[params.selectDt]?.["CAPS_START_TIME"] || "0000",
-            "HHmm",
-          ).format("HH:mm")} ~ ${dayjs(
-            dt?.[params.selectDt]?.["CAPS_END_TIME"] || "0000",
-            "HHmm",
-          ).format("HH:mm")}`}
-          read={true}
-          label="캡스 시간"
-          labelW="25%"
-        />
-      </div>
+      {dt?.[params.selectDt]?.["CAPS_START_TIME"] &&
+        dt?.[params.selectDt]?.["CAPS_END_TIME"] && (
+          <div className="mainInput col-span-2">
+            <CommonInput
+              id="workType"
+              value={`${
+                dt?.[params.selectDt]?.["CAPS_START_TIME"] === "XXXX"
+                  ? dt?.[params.selectDt]?.["CAPS_START_TIME"]
+                  : dayjs(
+                      dt?.[params.selectDt]?.["CAPS_START_TIME"] || "0000",
+                      "HHmm",
+                    ).format("HH:mm")
+              } ~ ${
+                dt?.[params.selectDt]?.["CAPS_END_TIME"] === "XXXX"
+                  ? dt?.[params.selectDt]?.["CAPS_END_TIME"]
+                  : dayjs(
+                      dt?.[params.selectDt]?.["CAPS_END_TIME"] || "0000",
+                      "HHmm",
+                    ).format("HH:mm")
+              }`}
+              read={true}
+              label="캡스 시간"
+              labelW="25%"
+            />
+          </div>
+        )}
+
       <div className="col-span-2 grid grid-cols-[75%_20%] items-center gap-2">
         <div className="mainInput">
           <CommonInput
