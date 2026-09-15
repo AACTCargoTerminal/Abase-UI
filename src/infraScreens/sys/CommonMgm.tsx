@@ -170,7 +170,7 @@ const GRID1_HEADER: TableHeaderType[] = [
   {
     key: "CODE_DESCRIPTION",
     value: "설명",
-    w: "15rem",
+    w: "25rem",
     option: { type: "WRITE" },
   },
 ];

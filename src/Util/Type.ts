@@ -176,10 +176,6 @@ type BaseHeader = {
 
 export type TableHeaderType =
   | (BaseHeader & {
-      key: "BTN";
-      option: TableBodyOptType;
-    })
-  | (BaseHeader & {
       key: "CHK" | "DROP";
       option?: TableBodyOptType;
     })
@@ -194,7 +190,7 @@ export type TableBodyOptType =
   | { type: "CHK" }
   | { type: "WRITE"; ext?: number }
   | { type: "ICON"; icon: IconNameType; value: string; color: string }
-  | { type: "BTN"; set: BtnType }
+  | { type: "BTN"; set: BtnType; value: Record<string, string> }
   | {
       type: "DROPDOWN";
       header: TableHeaderType[];

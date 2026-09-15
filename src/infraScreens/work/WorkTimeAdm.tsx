@@ -9,9 +9,11 @@ import {
 import { CommonContainer, CommonTab } from "../../comp/Container";
 import { CommonChk, CommonInput } from "../../comp/Input";
 import {
+  base64ToPdfUrl,
   getApi,
   getClass,
   getClassValue,
+  openModal,
   sendErr,
   sendLoading,
 } from "../../Util/Util";
@@ -107,7 +109,7 @@ const GRID1_HEADER_1: TableHeaderType[] = [
   },
 ];
 
-const FILTER_TAB: string[] = ["보류", "신청완료", "확정", "인사팀요청", "합계"];
+const FILTER_TAB: string[] = ["보류", "신청완료", "인사팀요청", "확정", "합계"];
 
 const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
   ({ outParam, param, pgmId, deviceType }, ref) => {
@@ -203,6 +205,7 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
     const [grid1, setGrid1] = useState<TableRow[]>([]);
     const grid1Ref = useRef<TableHandle | null>(null);
     const submitRef = useRef<string | null>(null);
+    const rejctRef = useRef<string | null>(null);
 
     useEffect(() => {
       if (selectTab === 0) {
@@ -212,11 +215,12 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
               (v) => v.key !== "APPROVE_ID" && v.key !== "APPROVE_TIME",
             ),
             {
-              key: "BTN",
+              key: "SUBMIT_FLAG",
               w: "4rem",
               value: "서류제출",
               option: {
                 type: "BTN",
+                value: {},
                 set: {
                   txt: "제출",
                   type: "PRINT",
@@ -246,11 +250,33 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
               v.key !== "SUBMIT_FLAG",
           ),
         ]);
-      } else if (selectTab === 3) {
+      } else if (selectTab === 2) {
         setGrid1Header([
           ...GRID1_HEADER.filter(
-            (v) => v.key !== "APPROVE_ID" && v.key !== "APPROVE_TIME",
+            (v) =>
+              v.key !== "APPROVE_ID" &&
+              v.key !== "APPROVE_TIME" &&
+              v.key !== "SUBMIT_FLAG",
           ),
+          {
+            key: "REJECT_FLAG",
+            w: "4rem",
+            value: "서류제출",
+            option: {
+              type: "BTN",
+              value: { A: "" },
+              set: {
+                txt: "제출",
+                type: "PRINT",
+                onClick(r) {
+                  if (r) {
+                    rejctRef.current = r;
+                    document.getElementById("rejectPdf")?.click();
+                  }
+                },
+              },
+            },
+          },
         ]);
       } else {
         setGrid1Header([...GRID1_HEADER]);
@@ -282,9 +308,9 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
             ? "J"
             : selectTab === 1
               ? "I"
-              : selectTab === 2
+              : selectTab === 3
                 ? "A"
-                : selectTab === 3
+                : selectTab === 2
                   ? "Q"
                   : "SUM");
 
@@ -301,7 +327,7 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
         const res = await getApi<Record<number, TableRow[]>>({
           baseUrl: "INFRA",
           method: "GET",
-          url: `/work/getWorkM010_005?date=${finalDate}&deptCode=${finalDeptCode}&username=${finalUsername}&approveFlag=${finalArr}&terminalCode=${hrmtrSelect}`,
+          url: `/work/getWorkL010_006?date=${finalDate}&deptCode=${finalDeptCode}&username=${finalUsername}&approveFlag=${finalArr}&terminalCode=${hrmtrSelect}`,
           pgmId,
           sucFlag: true,
         });
@@ -337,7 +363,6 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
           date: String(v["TIME_DATE"]).replaceAll("-", ""),
           SEQ: v["SEQ"],
           USER_SID: v["USER_SID"],
-          LOG_SEQ: v["LOG_SEQ"],
         };
       });
       if (tmpArray.length === 0) {
@@ -351,7 +376,7 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "POST",
-        url: `/work/setWorkM010_031`,
+        url: `/work/setWorkL010_014`,
         params: map,
         pgmId: pgmId,
         sucFlag: true,
@@ -402,6 +427,23 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
 
     const approveWithPdf = useCallback(
       async (e: React.ChangeEvent<HTMLInputElement>) => {
+        // const files = Array.from(e.target.files ?? []);
+        // e.target.value = "";
+
+        // if (files.length === 0) {
+        //   return;
+        // }
+
+        // const hasInvalidFile = files.some(
+        //   (file) =>
+        //     file.type !== "application/pdf" &&
+        //     !file.name.toLowerCase().endsWith(".pdf"),
+        // );
+
+        // if (hasInvalidFile) {
+        //   sendErr("PDF 파일만 업로드할 수 있습니다.");
+        //   return;
+        // }
         const file = e.target.files?.[0];
         e.target.value = "";
 
@@ -443,6 +485,58 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
         });
 
         sendLoading(false);
+        submitRef.current = null;
+        if (res.ok) {
+          await searchClick();
+        }
+      },
+      [pgmId, searchClick, grid1Ref.current],
+    );
+
+    const rejectWithPdf = useCallback(
+      async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+
+        if (!file) {
+          return;
+        }
+
+        if (
+          file.type !== "application/pdf" &&
+          !file.name.toLowerCase().endsWith(".pdf")
+        ) {
+          sendErr("PDF 파일만 업로드할 수 있습니다.");
+          return;
+        }
+
+        const tmp = grid1.find((v) => v?.["rowId"] === rejctRef.current);
+        if (!tmp) {
+          sendErr("선택한 항목이 없습니다.");
+          return;
+        }
+        const map = new Map<string, any>();
+        const date = String(tmp?.["TIME_DATE"]).replaceAll("-", "");
+        map.set("year", date.substring(0, 4));
+        map.set("mon", date.substring(4, 6));
+        map.set("day", date.substring(6, 8));
+        map.set("seq", tmp?.["SEQ"]);
+        map.set("userSid", tmp?.["USER_SID"]);
+        map.set("imgType", "OTRJ");
+        sendLoading(true);
+
+        const res = await getApi<Record<number, TableRow[]>>({
+          baseUrl: "INFRA",
+          method: "POST",
+          url: `/work/setWorkM010_018`,
+          params: map,
+          files: [file],
+          pgmId: pgmId,
+          sucFlag: true,
+        });
+
+        sendLoading(false);
+        rejctRef.current = null;
         if (res.ok) {
           await searchClick();
         }
@@ -552,6 +646,50 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
         }
       },
       [hrpatSelect?.["CODE_CODE"], date, date2, selectTab, name, name2],
+    );
+
+    const holdDocClick = useCallback(
+      async ({ r, type }: { r: TableRow; type: string }) => {
+        const map = new Map();
+        map.set("year", r?.["YEAR"] || "");
+        map.set("mon", r?.["MON"] || "");
+        map.set("day", r?.["DAY"] || "");
+        map.set("seq", r?.["SEQ"] || "0");
+        map.set("userSid", r?.["USER_SID"] || "0");
+        map.set("imgType", type);
+        sendLoading(true);
+        const ret = await getApi<TableRow[]>({
+          baseUrl: "INFRA",
+          method: "POST",
+          url: `/work/setWorkM010_042`,
+          pgmId: pgmId,
+          sucFlag: true,
+          params: map,
+        });
+        sendLoading(false);
+        if (ret.ok) {
+          if (ret.data) {
+            const tmpArray = ret.data.map((v) => ({
+              type: v?.["mime"] === "application/pdf" ? "PDF" : "IMG",
+              data: base64ToPdfUrl(v?.["data"], v?.["mime"]),
+              subject: v?.["remark"] || "",
+            }));
+
+            openModal({
+              array: [
+                {
+                  id: "MSITP010",
+                  name: "Print",
+                  param: {
+                    files: tmpArray,
+                  },
+                },
+              ],
+            });
+          }
+        }
+      },
+      [],
     );
 
     return (
@@ -720,9 +858,9 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
                   ? "J"
                   : v === 1
                     ? "I"
-                    : v === 2
+                    : v === 3
                       ? "A"
-                      : v === 3
+                      : v === 2
                         ? "Q"
                         : "SUM",
             });
@@ -760,6 +898,38 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
               width="100%"
               batch={true}
               ref={grid1Ref}
+              rightMenu={[
+                { key: "HOLD_DOC", value: "보류 서류" },
+                { key: "CAPS", value: "캡스" },
+              ]}
+              rightClick={(k, r) => {
+                if (k === "HOLD_DOC") {
+                  if (r?.["SUBMIT_FLAG"] === "Y") {
+                    holdDocClick({ r: r, type: "OTSB" });
+                  } else {
+                    sendErr("확인할 서류가 없습니다.");
+                  }
+                }
+                if (k === "CAPS") {
+                  openModal({
+                    array: [
+                      {
+                        id: "WORK_HR_CAPS_SEARCH",
+                        name: "캡스조회",
+                        param: {
+                          ADD_DAY: r?.["ADD_DAY"] || "0",
+                          USER_ID: r?.["USER_ID"] || "",
+                          DATE: r?.["TIME_DATE"] || "",
+                          CAPS_START_TIME: r?.["CAPS_START_TIME"] || "XXXX",
+                          CAPS_END_TIME: r?.["CAPS_END_TIME"] || "XXXX",
+                          USER_SID: r?.["USER_SID"] || 0,
+                          SEQ: r?.["SEQ"] || 0,
+                        },
+                      },
+                    ],
+                  });
+                }
+              }}
             />
           </CommonContainer>
           <CommonContainer
@@ -789,9 +959,20 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
             />
           </CommonContainer>
           <CommonContainer
-            title="확정 리스트"
+            title="인사팀 요청 리스트"
             childrenTitle={
-              <div className="p-[1%] grid grid-cols-[100px] gap-3">
+              <div className="p-[1%] grid grid-cols-[100px_100px] gap-3">
+                {postnSelect?.["VALUE3_CHAR"] === "Y" && (
+                  <div className="mainInput">
+                    <Btn
+                      txt="확정"
+                      type="NONE"
+                      onClick={() => {
+                        approveClick();
+                      }}
+                    />
+                  </div>
+                )}
                 {postnSelect?.["VALUE3_CHAR"] === "Y" && (
                   <div className="mainInput">
                     <Btn
@@ -812,10 +993,20 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
               width="100%"
               batch={true}
               ref={grid1Ref}
+              rightMenu={[{ key: "REJECT_DOC", value: "거절 서류" }]}
+              rightClick={(k, r) => {
+                if (k === "REJECT_DOC") {
+                  if (r?.["REJECT_FLAG"] === "Y") {
+                    holdDocClick({ r: r, type: "OTRJ" });
+                  } else {
+                    sendErr("확인할 서류가 없습니다.");
+                  }
+                }
+              }}
             />
           </CommonContainer>
           <CommonContainer
-            title="요청 리스트"
+            title="확정 리스트"
             childrenTitle={
               <div className="p-[1%] grid grid-cols-[100px] gap-3">
                 {postnSelect?.["VALUE3_CHAR"] === "Y" && (
@@ -858,6 +1049,18 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
               return;
             }
             approveWithPdf(e);
+          }}
+          className="hidden"
+        />
+        <input
+          id="rejectPdf"
+          type="file"
+          accept=".pdf,application/pdf"
+          onChange={(e) => {
+            if (rejctRef.current === null) {
+              return;
+            }
+            rejectWithPdf(e);
           }}
           className="hidden"
         />

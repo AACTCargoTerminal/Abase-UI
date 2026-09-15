@@ -119,7 +119,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
-        url: `/work/getWorkM010_004?date=${date}`,
+        url: `/work/getWorkL010_007?date=${date}`,
         pgmId: pgmId,
         sucFlag: true,
       });
