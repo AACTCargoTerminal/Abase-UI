@@ -32,10 +32,13 @@ import {
 } from "../../comp/DropDown";
 import { commonHeader2, commonHeader5 } from "../../Util/Header";
 import dayjs from "dayjs";
+import "dayjs/locale/ko";
 import { CommonChk, CommonInput } from "../../comp/Input";
 import { Btn, MenuBtn } from "../../comp/Btn";
-import { confirmAsync } from "../../confirmService";
+import { TbExclamationCircle } from "react-icons/tb";
 import moment from "moment";
+
+dayjs.locale("ko");
 
 const TABS = ["요청", "전체 리스트", "검토 리스트", "스케줄"];
 const BTN_ARRAY: MenuBtnDataType[] = [
@@ -48,6 +51,7 @@ const BTN_ARRAY: MenuBtnDataType[] = [
 
 type ReqHandle = {
   search: ({ userNameP }: { userNameP: string }) => void;
+  nameSend?: ({ userNameP }: { userNameP: string }) => void;
 };
 
 type SetProp = {
@@ -60,6 +64,7 @@ type SetProp = {
   date: string;
   dateFlag: boolean;
   userName: string;
+  onClick?: (r: TableRow) => void;
 };
 
 const getOPCOD = async (pgmId: string): Promise<TableRow[]> => {
@@ -347,7 +352,12 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
                 id="userName"
                 value={userName}
                 onChange={(v) => {
-                  searchClick({ num: tabSelect, userNameP: v });
+                  if (v && tabSelect !== 3) {
+                    searchClick({ num: tabSelect, userNameP: v });
+                  } else if (v && tabSelect === 3) {
+                    schRef.current?.nameSend?.({ userNameP: v });
+                  }
+
                   setUserName(v);
                 }}
                 label="이름"
@@ -493,6 +503,14 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
             userName={userName}
             date={date}
             dateFlag={dateChk}
+            onClick={(r) => {
+              setUserName(r?.["USER_NAME"] || "");
+              setTabSelect(1);
+              setStartDate(r?.["DATE"] ?? "");
+              setEndDate(r?.["DATE"] ?? "");
+              setDateChk(true);
+              searchClick({ num: 1, userNameP: r?.["USER_NAME"] || "" });
+            }}
           />
         </CommonTab>
       </div>
@@ -1676,7 +1694,6 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
               height="34rem"
               width="100%"
               onClick={async (r) => {
-                console.log(r);
                 setGrid1Select(r);
                 return false;
               }}
@@ -1734,6 +1751,7 @@ const SchList = forwardRef<ReqHandle, SetProp>(
       userName,
       date,
       dateFlag,
+      onClick,
     },
     ref,
   ) => {
@@ -1748,9 +1766,40 @@ const SchList = forwardRef<ReqHandle, SetProp>(
       Record<number, Record<string, TableRow[]>>
     >({});
 
+    const [orgGrid1, setOrgGrid1] = useState<TableRow[]>([]);
+    const [orgGrid1Dt, setOrgGrid1Dt] = useState<
+      Record<number, Record<string, TableRow[]>>
+    >({});
+
     useImperativeHandle(ref, () => ({
       search({ userNameP }) {
         searchClick();
+      },
+      nameSend({ userNameP }) {
+        if (userNameP) {
+          var tmpArray: TableRow[] = [];
+          var tmp: Record<number, Record<string, TableRow[]>> = {};
+
+          Object.values(orgGrid1).forEach((v) => {
+            if (String(v?.["USER_NAME"] || "").includes(userNameP)) {
+              if (v?.["USER_SID"]) {
+                tmpArray.push(v);
+                tmp[v["USER_SID"]] = orgGrid1Dt[v["USER_SID"]];
+              }
+            }
+          });
+
+          if (Object.keys(tmp).length === 0) {
+            setGrid1(orgGrid1);
+            setGrid1Dt(orgGrid1Dt);
+          } else {
+            setGrid1(tmpArray);
+            setGrid1Dt(tmp);
+          }
+        } else {
+          setGrid1(orgGrid1);
+          setGrid1Dt(orgGrid1Dt);
+        }
       },
     }));
 
@@ -1774,6 +1823,7 @@ const SchList = forwardRef<ReqHandle, SetProp>(
       if (res.ok) {
         if (res.data?.[0] && res.data?.[1]) {
           setGrid1(res.data[0]);
+          setOrgGrid1(res.data[0]);
           const tmp: Record<number, Record<string, TableRow[]>> = {};
 
           res.data[1].forEach((r1) => {
@@ -1804,102 +1854,311 @@ const SchList = forwardRef<ReqHandle, SetProp>(
             }
           });
           setGrid1Dt(tmp);
-
+          setOrgGrid1Dt(tmp);
           return;
         }
       }
       setGrid1([]);
       setGrid1Dt({});
+      setOrgGrid1([]);
+      setOrgGrid1Dt({});
     }
 
+    const filterColor = (r: TableRow) => {
+      var color = "bg-white";
+
+      if (r?.["OT_APPROVE_FLAG"] === "Y" && r?.["WORK_TYPE_CODE"] === "X") {
+        color = "bg-red-300";
+      }
+
+      return color;
+    };
+
     return (
-      <div
-        className="rounded-md h-[40rem] w-full overflow-x-auto"
-        style={{ scrollbarGutter: "stable" }}>
-        {/* 헤더 */}
-        <div
-          className={`sticky top-0 z-10 grid items-center border-b-2 border-x-2 border-slate-200 py-[0.1%] h-[2.5rem] bg-[#1F2A44] rounded-t-md shadow-xs`}
-          style={{
-            gridTemplateColumns: `50px 140px repeat(${dayLength},70px) 60px 60px 60px 60px`,
-            width: "max-content",
-            minWidth: "100%",
-          }}>
-          <div
-            className="font-bold text-xs border-r-2 border-slate-300 flex flex-col items-center justify-center h-full text-slate-200"
-            style={{
-              position: "sticky",
-              left: "0px",
-              backgroundColor: "#1F2A44",
-            }}>
-            <div className="text-center">순 번</div>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 border border-gray-300 rounded-md">
+          <div className="flex items-center gap-2 py-[0.5rem] px-[1.5rem] bg-gray-300 shadow-xs">
+            <TbExclamationCircle className="text-red-700 text-sm" />
+            <span className="font-bold text-xs">상태 표시 안내</span>
           </div>
-          <div
-            style={{
-              position: "sticky",
-              left: "50px",
-              backgroundColor: "#1F2A44",
-            }}
-            className="font-bold text-xs border-r-2 border-slate-300 flex flex-col gap-y-1 h-full justify-center w-full text-slate-200">
-            <div className="text-center">이름 : 아이디</div>
-          </div>
-          {Array.from(
-            {
-              length: dayLength,
-            },
-            (_, i) => {
-              const m = dayjs(date)
-                .locale("ko")
-                .date(i + 1);
-              const dayName = m.format("ddd");
-
-              var color = "text-slate-200";
-
-              if (m.day() === 0) {
-                color = "text-[#C92F34]";
-              } else if (m.day() === 6) {
-                color = "text-blue-500";
-              } else {
-              }
-
-              return (
-                <div
-                  className={`flex flex-col px-[0.5%] justify-center font-bold text-xs ${color} ${i === dayLength - 1 ? "" : "border-r-2 border-slate-300"} h-full`}
-                  key={i}>
-                  <div className="text-center">{i + 1}</div>
-                  <div className="text-center">{dayName}</div>
-                </div>
-              );
-            },
-          )}
-          <div
-            style={{ position: "sticky", right: "180px" }}
-            className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
-            휴무일수
-          </div>
-          <div
-            style={{ position: "sticky", right: "120px" }}
-            className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
-            사용휴무
-          </div>
-          <div
-            style={{ position: "sticky", right: "60px" }}
-            className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
-            사용연차
-          </div>
-          <div
-            style={{ position: "sticky", right: "0px" }}
-            className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
-            잔여연차
+          <div className="flex items-center mx-[1.5rem]">
+            <div className="grid grid-cols-10 gap-x-3 items-center">
+              {hrreq.map((hv, i) => {
+                return (
+                  <div key={i} className="flex gap-2 items-center mainInput">
+                    <div
+                      className="size-3 shrink-0"
+                      style={{
+                        backgroundColor: hv?.["VALUE5_CHAR"],
+                      }}
+                    />
+                    <span className="text-nowrap">
+                      {hv?.["CODE_NAME2"] || ""}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
-        {/* 바디 */}
         <div
-          className="border-x-2 border-slate-200"
-          style={{ width: "max-content", minWidth: "100%" }}>
-          {grid1.map((v, i) => (
+          className="rounded-md h-[34rem] w-full overflow-x-auto"
+          style={{ scrollbarGutter: "stable" }}>
+          {/* 헤더 */}
+          <div
+            className={`sticky top-0 z-10 grid items-center border-b-2 border-x-2 border-slate-200 py-[0.1%] h-[2.5rem] bg-[#1F2A44] rounded-t-md shadow-xs`}
+            style={{
+              gridTemplateColumns: `50px 140px repeat(${dayLength},70px) 60px 60px 60px 60px`,
+              width: "max-content",
+              minWidth: "100%",
+            }}>
             <div
-              key={i}
-              className={`grid items-center border-b-2 border-slate-500 ${i % 2 === 0 ? "bg-[#EEF3F8]" : "bg-[#D6E6F0]"} duration-300 origin-top h-[4.5rem] `}
+              className="font-bold text-xs border-r-2 border-slate-300 flex flex-col items-center justify-center h-full text-slate-200"
+              style={{
+                position: "sticky",
+                left: "0px",
+                backgroundColor: "#1F2A44",
+              }}>
+              <div className="text-center">순 번</div>
+            </div>
+            <div
+              style={{
+                position: "sticky",
+                left: "50px",
+                backgroundColor: "#1F2A44",
+              }}
+              className="font-bold text-xs border-r-2 border-slate-300 flex flex-col gap-y-1 h-full justify-center w-full text-slate-200">
+              <div className="text-center">이름 : 아이디</div>
+            </div>
+            {Array.from(
+              {
+                length: dayLength,
+              },
+              (_, i) => {
+                const m = dayjs(date)
+                  .locale("ko")
+                  .date(i + 1);
+                const dayName = m.format("ddd");
+
+                var color = "text-slate-200";
+
+                if (m.day() === 0) {
+                  color = "text-[#C92F34]";
+                } else if (m.day() === 6) {
+                  color = "text-blue-500";
+                } else {
+                }
+
+                return (
+                  <div
+                    className={`flex flex-col px-[0.5%] justify-center font-bold text-xs ${color} ${i === dayLength - 1 ? "" : "border-r-2 border-slate-300"} h-full`}
+                    key={i}>
+                    <div className="text-center">{i + 1}</div>
+                    <div className="text-center">{dayName}</div>
+                  </div>
+                );
+              },
+            )}
+            <div
+              style={{ position: "sticky", right: "180px" }}
+              className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
+              휴무일수
+            </div>
+            <div
+              style={{ position: "sticky", right: "120px" }}
+              className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
+              사용휴무
+            </div>
+            <div
+              style={{ position: "sticky", right: "60px" }}
+              className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
+              사용연차
+            </div>
+            <div
+              style={{ position: "sticky", right: "0px" }}
+              className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
+              잔여연차
+            </div>
+          </div>
+          {/* 바디 */}
+          <div
+            className="border-x-2 border-slate-200"
+            style={{ width: "max-content", minWidth: "100%" }}>
+            {grid1.map((v, i) => (
+              <div
+                key={i}
+                className={`grid items-center border-b-2 border-slate-500 ${i % 2 === 0 ? "bg-[#EEF3F8]" : "bg-[#D6E6F0]"} duration-300 origin-top h-[4.5rem] `}
+                style={{
+                  gridTemplateColumns: `50px 140px repeat(${dayLength},70px) 60px 60px 60px 60px`,
+                  width: "max-content",
+                  minWidth: "100%",
+                }}>
+                <div
+                  style={{
+                    position: "sticky",
+                    left: "0px",
+                    backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                  }}
+                  className="text-center flex flex-col gap-x-1 items-center justify-center w-full h-full">
+                  <div className="flex gap-x-1">
+                    {" "}
+                    <span className="h-full flex items-center">{i + 1}</span>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    position: "sticky",
+                    left: "50px",
+                    backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                  }}
+                  className="flex flex-col border-r-2 border-slate-400 gap-y-1 h-full items-center justify-center w-full px-[4%]">
+                  <div className="mainInput">
+                    <CommonInput
+                      id={`userId`}
+                      value={`${v["USER_NAME"]} : ${v["USER_ID"]}`}
+                      read={true}
+                    />
+                  </div>
+                </div>
+                {Array.from(
+                  {
+                    length: dayLength,
+                  },
+                  (_, idx) => {
+                    return (
+                      <div
+                        className={`flex flex-col h-full items-center justify-center px-[5%]  gap-y-1 cursor-pointer rounded-md hover:bg-gray-300`}
+                        key={`${i}${idx}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClick?.({
+                            USER_NAME: v["USER_NAME"],
+                            DATE:
+                              date +
+                              String(
+                                grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                  "DAY"
+                                ] ?? "",
+                              ).padStart(2, "0"),
+                          });
+                        }}>
+                        <div
+                          className={`flex w-[70%] rounded-md border-2 items-center justify-center gap-x-1 ${
+                            !grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                              "DETAIL_STATUS"
+                            ]
+                              ? "border-transparent"
+                              : `border-${
+                                  hrreq.find(
+                                    (fv) =>
+                                      fv?.["CODE_CODE"] ===
+                                      grid1Dt?.[v["USER_SID"]]?.[
+                                        idx + 1
+                                      ]?.[0]?.["DETAIL_STATUS"],
+                                  )?.["VALUE5_CHAR"]
+                                }`
+                          }`}
+                          style={{
+                            borderColor: hrreq.find(
+                              (fv) =>
+                                fv?.["CODE_CODE"] ===
+                                grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                  "DETAIL_STATUS"
+                                ],
+                            )?.["VALUE5_CHAR"]
+                              ? hrreq.find(
+                                  (fv) =>
+                                    fv?.["CODE_CODE"] ===
+                                    grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                      "DETAIL_STATUS"
+                                    ],
+                                )?.["VALUE5_CHAR"]
+                              : "transparent",
+                          }}></div>
+                        <div
+                          className={`w-full mainInput flex items-center rounded-md border border-gray-300 ${filterColor(grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0])} px-3 py-1
+              focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}>
+                          <input
+                            className="w-full h-full text-left focus:outline-none"
+                            readOnly={true}
+                            value={
+                              grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                "WORK_NAME"
+                              ] || ""
+                            }
+                          />
+                        </div>
+                      </div>
+                    );
+                  },
+                )}
+
+                <div
+                  style={{
+                    position: "sticky",
+                    right: "180px",
+                    backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                  }}
+                  className="flex items-center h-full">
+                  <div className="mainInput">
+                    <CommonInput
+                      id={`holiday${i}`}
+                      value={v["HOLIDAY"]}
+                      read={true}
+                    />
+                  </div>
+                </div>
+                <div
+                  style={{
+                    position: "sticky",
+                    right: "120px",
+                    backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                  }}
+                  className="flex items-center h-full">
+                  <div className="mainInput">
+                    <CommonInput
+                      id={`holiMinus${i}`}
+                      value={v["HOLIDAY_USE"] || "0"}
+                      read={true}
+                    />
+                  </div>
+                </div>
+                <div
+                  style={{
+                    position: "sticky",
+                    right: "60px",
+                    backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                  }}
+                  className="flex items-center h-full">
+                  <div className="mainInput">
+                    <CommonInput
+                      id={`USE_ANN${i}`}
+                      read={true}
+                      value={v["ANN_DAY"] || "0"}
+                    />
+                  </div>
+                </div>
+                <div
+                  style={{
+                    position: "sticky",
+                    right: "0px",
+                    backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                  }}
+                  className="flex items-center h-full"></div>
+              </div>
+            ))}
+          </div>
+          {/* 푸터 */}
+          <div
+            className="sticky bottom-0 z-30 h-[2rem] flex min-w-max"
+            style={{
+              background: "#E4E4E4",
+            }}>
+            <div
+              className="grid items-center"
               style={{
                 gridTemplateColumns: `50px 140px repeat(${dayLength},70px) 60px 60px 60px 60px`,
                 width: "max-content",
@@ -1909,144 +2168,17 @@ const SchList = forwardRef<ReqHandle, SetProp>(
                 style={{
                   position: "sticky",
                   left: "0px",
-                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
                 }}
-                className="text-center flex flex-col gap-x-1 items-center justify-center w-full h-full">
-                <div className="flex gap-x-1">
-                  {" "}
-                  <span className="h-full flex items-center">{i + 1}</span>
-                </div>
-              </div>
+                className="flex items-center h-full"
+              />
               <div
                 style={{
                   position: "sticky",
-                  left: "50px",
-                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
-                }}
-                className="flex flex-col border-r-2 border-slate-400 gap-y-1 h-full items-center justify-center w-full px-[4%]">
-                <div className="mainInput">
-                  <CommonInput
-                    id={`userId`}
-                    value={`${v["USER_NAME"]} : ${v["USER_ID"]}`}
-                    read={true}
-                  />
-                </div>
-              </div>
-              {Array.from(
-                {
-                  length: dayLength,
-                },
-                (_, idx) => {
-                  return (
-                    <div
-                      className={`flex flex-col h-full items-center justify-center px-[5%]  gap-y-1 cursor-pointer rounded-md`}
-                      key={`${i}${idx}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}>
-                      <div
-                        className={`w-full mainInput flex items-center rounded-md border border-gray-300 bg-white px-3 py-1
-              focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}>
-                        <input
-                          className="w-full h-full text-left focus:outline-none"
-                          readOnly={true}
-                          value={
-                            grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
-                              "WORK_NAME"
-                            ] || ""
-                          }
-                        />
-                      </div>
-                    </div>
-                  );
-                },
-              )}
-
-              <div
-                style={{
-                  position: "sticky",
-                  right: "180px",
-                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                  left: "120px",
                 }}
                 className="flex items-center h-full">
-                <div className="mainInput">
-                  <CommonInput
-                    id={`holiday${i}`}
-                    value={v["HOLIDAY"]}
-                    read={true}
-                  />
-                </div>
+                {Object.keys(grid1).length}
               </div>
-              <div
-                style={{
-                  position: "sticky",
-                  right: "120px",
-                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
-                }}
-                className="flex items-center h-full">
-                <div className="mainInput">
-                  <CommonInput
-                    id={`holiMinus${i}`}
-                    value={v["HOLIDAY_USE"] || "0"}
-                    read={true}
-                  />
-                </div>
-              </div>
-              <div
-                style={{
-                  position: "sticky",
-                  right: "60px",
-                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
-                }}
-                className="flex items-center h-full">
-                <div className="mainInput">
-                  <CommonInput
-                    id={`USE_ANN${i}`}
-                    read={true}
-                    value={v["ANN_DAY"] || "0"}
-                  />
-                </div>
-              </div>
-              <div
-                style={{
-                  position: "sticky",
-                  right: "0px",
-                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
-                }}
-                className="flex items-center h-full"></div>
-            </div>
-          ))}
-        </div>
-        {/* 푸터 */}
-        <div
-          className="sticky bottom-0 z-30 h-[2rem] flex min-w-max"
-          style={{
-            background: "#E4E4E4",
-          }}>
-          <div
-            className="grid items-center"
-            style={{
-              gridTemplateColumns: `50px 140px repeat(${dayLength},70px) 60px 60px 60px 60px`,
-              width: "max-content",
-              minWidth: "100%",
-            }}>
-            <div
-              style={{
-                position: "sticky",
-                left: "0px",
-              }}
-              className="flex items-center h-full"
-            />
-            <div
-              style={{
-                position: "sticky",
-                left: "120px",
-              }}
-              className="flex items-center h-full">
-              {Object.keys(grid1).length}
             </div>
           </div>
         </div>

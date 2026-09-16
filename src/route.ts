@@ -40,6 +40,8 @@ export const ROUTE_INFRA_IMPORTERS = {
   INFRASYS090: () => import("./infraScreens/sys/CommonMgm"),
   INFRASYS100: () => import("./infraScreens/sys/CommonMgm"),
   INFRASYS110: () => import("./infraScreens/sys/CommonMgm"),
+  APPR010: () => import("./infraScreens/appr/ApprMgm"),
+  APPR020: () => import("./infraScreens/appr/ApprView"),
 } as const;
 
 export type RouteInfraKey = keyof typeof ROUTE_INFRA_IMPORTERS;
@@ -63,7 +65,9 @@ export const INFRA_ROUTE_MAP: Record<
   INFRASYS090: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS090),
   INFRASYS100: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS100),
   INFRASYS110: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS110),
-};
+  APPR010: React.lazy(ROUTE_INFRA_IMPORTERS.APPR010), //IFAPR0010,/infraScreens/appr/,APPRMGM,결재 관리,MDI
+  APPR020: React.lazy(ROUTE_INFRA_IMPORTERS.APPR020), //IFAPR0020,/infraScreens/appr/,APPRVIEW,결재 관리,MDI
+};  
 
 export const MODAL_ROUTE_IMPORTERS = {
   USER_INFO: () => import("./screens/common/UserInfo"),
