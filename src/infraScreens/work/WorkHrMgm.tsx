@@ -19,6 +19,7 @@ import {
   base64ToPdfUrl,
   getApi,
   getClass,
+  getInt,
   openModal,
   sendErr,
   sendLoading,
@@ -34,8 +35,9 @@ import dayjs from "dayjs";
 import { CommonChk, CommonInput } from "../../comp/Input";
 import { Btn, MenuBtn } from "../../comp/Btn";
 import { confirmAsync } from "../../confirmService";
+import moment from "moment";
 
-const TABS = ["요청", "확정 전 리스트", "검토 리스트"];
+const TABS = ["요청", "전체 리스트", "검토 리스트", "스케줄"];
 const BTN_ARRAY: MenuBtnDataType[] = [
   { KEY: "A", VALUE: "스케줄( 예정 )" },
   { KEY: "B", VALUE: "스케줄( 확정 )" },
@@ -84,6 +86,7 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
     const reqRef = useRef<ReqHandle>(null);
     const beforeRef = useRef<ReqHandle>(null);
     const apprRef = useRef<ReqHandle>(null);
+    const schRef = useRef<ReqHandle>(null);
 
     useImperativeHandle(ref, () => ({
       onModalPayload(payload: TableRow) {
@@ -119,6 +122,8 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
           beforeRef.current?.search({ userNameP: tmpUserName });
         } else if (tmpTabSelect === 2) {
           apprRef.current?.search({ userNameP: tmpUserName });
+        } else if (tmpTabSelect === 3) {
+          schRef.current?.search({ userNameP: tmpUserName });
         }
       },
       [tabSelect, hrpatSelect, trmcdSelect, startDate, endDate, userName],
@@ -477,6 +482,18 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
             date={date}
             dateFlag={dateChk}
           />
+          <SchList
+            hrreq={hrreq}
+            pgmId={pgmId}
+            ref={schRef}
+            deptCode={hrpatSelect}
+            fromDate={endDate}
+            terminalCode={trmcdSelect}
+            toDate={startDate}
+            userName={userName}
+            date={date}
+            dateFlag={dateChk}
+          />
         </CommonTab>
       </div>
     );
@@ -486,7 +503,6 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
 export default WorkHrMgm;
 
 const GRID1_HEADER: TableHeaderType[] = [
-  { key: "CHK", value: "", w: "2rem" },
   { key: "REQ_DATE", value: "날짜", w: "6rem", sum: 0 },
   { key: "REQ_NAME", value: "요청명", w: "8rem" },
   { key: "DEPT_NAME", value: "파트명", w: "8rem" },
@@ -610,7 +626,7 @@ const searchClick = async ({
   const ret = await getApi<Record<number, TableRow[]>>({
     baseUrl: "INFRA",
     method: "POST",
-    url: `/work/getWorkM010_006`,
+    url: `/work/getWorkL010_008`,
     pgmId: pgmId,
     sucFlag: true,
     params: map,
@@ -701,7 +717,7 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
       const ret = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
-        url: `/work/getWorkM010_007?date=${yyyy + mon + day}&userSid=${userSid}&seq=${seq}`,
+        url: `/work/getWorkL010_009?date=${yyyy + mon + day}&userSid=${userSid}&seq=${seq}`,
         pgmId: pgmId,
         sucFlag: true,
       });
@@ -728,18 +744,11 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
 
     const reqClick = useCallback(
       async (reqFlag: string) => {
-        const tmp = grid1Ref?.current?.getChk();
+        const tmp = grid1Select;
         if (tmp && Object.keys(tmp).length > 0) {
-          const reqArray: TableRow[] = Object.values(tmp).filter(
-            (v) => v?.["CHK"] === true,
-          );
-          if (reqArray.length === 0) {
-            sendErr("선택한 항목이 없습니다.");
-            return;
-          }
           sendLoading(true);
           const map = new Map<string, any>();
-          map.set("reqArray", reqArray);
+          map.set("reqArray", [tmp]);
           map.set("reqFlag", reqFlag);
           const ret = await getApi<Record<number, TableRow[]>>({
             baseUrl: "INFRA",
@@ -773,6 +782,7 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
       },
       [
         grid1Ref?.current,
+        grid1Select,
         hrreqHrSelect,
         fromDate,
         toDate,
@@ -782,6 +792,50 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
         date,
         dateFlag,
       ],
+    );
+
+    const holdDocClick = useCallback(
+      async ({ r, type }: { r: TableRow; type: string }) => {
+        const map = new Map();
+        map.set("year", r?.["YEAR"] || "");
+        map.set("mon", r?.["MON"] || "");
+        map.set("day", r?.["DAY"] || "");
+        map.set("seq", r?.["SEQ"] || "0");
+        map.set("userSid", r?.["USER_SID"] || "0");
+        map.set("imgType", type);
+        sendLoading(true);
+        const ret = await getApi<TableRow[]>({
+          baseUrl: "INFRA",
+          method: "POST",
+          url: `/work/setWorkM010_042`,
+          pgmId: pgmId,
+          sucFlag: true,
+          params: map,
+        });
+        sendLoading(false);
+        if (ret.ok) {
+          if (ret.data) {
+            const tmpArray = ret.data.map((v) => ({
+              type: v?.["mime"] === "application/pdf" ? "PDF" : "IMG",
+              data: base64ToPdfUrl(v?.["data"], v?.["mime"]),
+              subject: v?.["remark"] || "",
+            }));
+
+            openModal({
+              array: [
+                {
+                  id: "MSITP010",
+                  name: "Print",
+                  param: {
+                    files: tmpArray,
+                  },
+                },
+              ],
+            });
+          }
+        }
+      },
+      [],
     );
 
     return (
@@ -891,6 +945,27 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
               }}
               ref={grid1Ref}
               batch={true}
+              rightMenu={[
+                { key: "REJECT_DOC", value: "거절 서류" },
+                { key: "HOLD_DOC", value: "보류 서류" },
+              ]}
+              rightClick={(k, v) => {
+                if (k === "REJECT_DOC") {
+                  if (v?.["REJECT_FLAG"] === "Y") {
+                    holdDocClick({ r: v, type: "OTRJ" });
+                  } else {
+                    sendErr("확인할 서류가 없습니다.");
+                  }
+                }
+
+                if (k === "HOLD_DOC") {
+                  if (v?.["SUBMIT_FLAG"] === "Y") {
+                    holdDocClick({ r: v, type: "OTSB" });
+                  } else {
+                    sendErr("확인할 서류가 없습니다.");
+                  }
+                }
+              }}
             />
           </CommonContainer>
         </div>
@@ -1063,7 +1138,7 @@ const BeforeList = forwardRef<ReqHandle, SetProp>(
       const ret = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
-        url: `/work/getWorkM010_007?date=${yyyy + mon + day}&userSid=${userSid}&seq=${seq}`,
+        url: `/work/getWorkL010_009?date=${yyyy + mon + day}&userSid=${userSid}&seq=${seq}`,
         pgmId: pgmId,
       });
 
@@ -1183,7 +1258,7 @@ const BeforeList = forwardRef<ReqHandle, SetProp>(
       <div className="grid grid-cols-[36%_64%] grid-rows-[10rem_10rem_1fr] gap-2">
         <div className="row-span-3">
           <CommonContainer
-            title="확정 전 리스트"
+            title="전체 리스트"
             childrenTitle={
               <div className="flex items-center w-[50%]">
                 <div className="mainInput">
@@ -1309,6 +1384,7 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
 
     const [grid1, setGrid1] = useState<TableRow[]>([]);
     const grid1Ref = useRef<TableHandle>(null);
+    const [grid1Select, setGrid1Select] = useState<TableRow>({});
 
     const [otFlag, setOtFlag] = useState<boolean>(true);
 
@@ -1354,7 +1430,7 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
         const ret = await getApi<Record<number, TableRow[]>>({
           baseUrl: "INFRA",
           method: "POST",
-          url: `/work/setWorkM010_035`,
+          url: `/work/setWorkL010_016`,
           pgmId: pgmId,
           sucFlag: true,
           params: map,
@@ -1417,7 +1493,7 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
         const ret = await getApi<Record<number, TableRow[]>>({
           baseUrl: "INFRA",
           method: "POST",
-          url: `/work/setWorkM010_041`,
+          url: `/work/setWorkL010_018`,
           pgmId: pgmId,
           sucFlag: true,
           params: map,
@@ -1459,105 +1535,49 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
       dateFlag,
     ]);
 
-    const holdDocClick = useCallback(async ({ r }: { r: TableRow }) => {
-      const map = new Map();
-      map.set("year", r?.["YEAR"] || "");
-      map.set("mon", r?.["MON"] || "");
-      map.set("day", r?.["DAY"] || "");
-      map.set("seq", r?.["SEQ"] || "0");
-      map.set("userSid", r?.["USER_SID"] || "0");
-      map.set("imgType", "OTSB");
-      sendLoading(true);
-      const ret = await getApi<TableRow[]>({
-        baseUrl: "INFRA",
-        method: "POST",
-        url: `/work/setWorkM010_042`,
-        pgmId: pgmId,
-        sucFlag: true,
-        params: map,
-      });
-      sendLoading(false);
-      if (ret.ok) {
-        if (ret.data?.[0]) {
-          const tmp = ret.data[0];
-
-          openModal({
-            array: [
-              {
-                id: "MSITP010",
-                name: "Print",
-                param: {
-                  type: tmp?.["mime"] === "application/pdf" ? "PDF" : "IMG",
-                  data: base64ToPdfUrl(tmp?.["data"], tmp?.["mime"]),
-                },
-              },
-            ],
-          });
-        }
-      }
-    }, []);
-
-    const otDelete = useCallback(async () => {
-      const tmp = grid1Ref.current?.getChk();
-
-      if (tmp && Object.keys(tmp).length > 0) {
-        const reqArray = Object.values(tmp).map((v) => ({
-          date: String(v["REQ_DATE"]).replaceAll("-", ""),
-          SEQ: v?.["SEQ"] || 0,
-          USER_SID: v?.["USER_SID"] || 0,
-        }));
-        if (reqArray.length === 0) {
-          sendErr("항목이 없습니다.");
-          return;
-        }
-        const map = new Map<string, any>();
-        map.set("DEL", reqArray);
-
+    const holdDocClick = useCallback(
+      async ({ r, type }: { r: TableRow; type: string }) => {
+        const map = new Map();
+        map.set("year", r?.["YEAR"] || "");
+        map.set("mon", r?.["MON"] || "");
+        map.set("day", r?.["DAY"] || "");
+        map.set("seq", r?.["SEQ"] || "0");
+        map.set("userSid", r?.["USER_SID"] || "0");
+        map.set("imgType", type);
         sendLoading(true);
-        const ret = await getApi<Record<number, TableRow[]>>({
+        const ret = await getApi<TableRow[]>({
           baseUrl: "INFRA",
           method: "POST",
-          url: `/work/setWorkM010_022?adminFlag=Y`,
+          url: `/work/setWorkM010_042`,
           pgmId: pgmId,
           sucFlag: true,
           params: map,
         });
         sendLoading(false);
-
         if (ret.ok) {
-          searchClick({
-            type: "APPR",
-            pgmId: pgmId,
-            fromDate: fromDate,
-            toDate: toDate,
-            deptCode: deptCode,
-            reqFlag: hrreqHrSelect,
-            terminalCode: terminalCode,
-            userName: userName,
-            date: date,
-            dateFlag: dateFlag,
-            otFlag: otFlag ? "Y" : "N",
-          })
-            .then((v) => {
-              setGrid1(v);
-            })
-            .catch((v) => setGrid1([]));
+          if (ret.data) {
+            const tmpArray = ret.data.map((v) => ({
+              type: v?.["mime"] === "application/pdf" ? "PDF" : "IMG",
+              data: base64ToPdfUrl(v?.["data"], v?.["mime"]),
+              subject: v?.["remark"] || "",
+            }));
+
+            openModal({
+              array: [
+                {
+                  id: "MSITP010",
+                  name: "Print",
+                  param: {
+                    files: tmpArray,
+                  },
+                },
+              ],
+            });
+          }
         }
-      } else {
-        sendErr("선택한 항목이 없습니다.");
-        return;
-      }
-    }, [
-      grid1Ref.current,
-      hrreqHrSelect,
-      fromDate,
-      toDate,
-      deptCode,
-      terminalCode,
-      userName,
-      date,
-      dateFlag,
-    ]);
+      },
+      [],
+    );
 
     return (
       <div className="grid grid-rows-[10rem_10rem_1fr] gap-2">
@@ -1619,10 +1639,32 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
                 </div>
                 <div className="mainInput">
                   <Btn
-                    txt="OT 삭제"
+                    txt="OT 반려"
                     type="NONE"
                     onClick={() => {
-                      otDelete();
+                      if (!grid1Select?.["USER_SID"]) {
+                        sendErr("선택한행이 없습니다.");
+                        return;
+                      }
+                      openModal({
+                        array: [
+                          {
+                            id: "WORK_HR_REQ_DENY",
+                            name: "OT 반려",
+                            param: {
+                              YEAR: grid1Select?.["YEAR"] || "",
+                              MON: grid1Select?.["MON"] || "",
+                              DAY: grid1Select?.["DAY"] || "",
+                              USER_SID: grid1Select?.["USER_SID"] || "",
+                              SEQ: grid1Select?.["SEQ"],
+                              USER_ID: grid1Select?.["USER_ID"] || "",
+                              USER_NAME: grid1Select?.["USER_NAME"] || "",
+                              REQ_DATE: grid1Select?.["REQ_DATE"] || "",
+                              TYPE: "HOLD",
+                            },
+                          },
+                        ],
+                      });
                     }}
                   />
                 </div>
@@ -1634,6 +1676,8 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
               height="34rem"
               width="100%"
               onClick={async (r) => {
+                console.log(r);
+                setGrid1Select(r);
                 return false;
               }}
               rightMenu={[
@@ -1641,8 +1685,8 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
                 { key: "CAPS", value: "캡스확인" },
               ]}
               rightClick={(k, r) => {
-                if (k === "HOLD_DOC" && r?.["IMG_FLAG"] === "Y") {
-                  holdDocClick({ r: r });
+                if (k === "HOLD_DOC" && r !== undefined) {
+                  holdDocClick({ r: r, type: "ALL" });
                 }
                 if (k === "CAPS") {
                   if (r?.["DETAIL_STATUS"] === "C") {
@@ -1672,6 +1716,339 @@ const ApproveList = forwardRef<ReqHandle, SetProp>(
               ref={grid1Ref}
             />
           </CommonContainer>
+        </div>
+      </div>
+    );
+  },
+);
+
+const SchList = forwardRef<ReqHandle, SetProp>(
+  (
+    {
+      hrreq,
+      pgmId,
+      deptCode,
+      fromDate,
+      terminalCode,
+      toDate,
+      userName,
+      date,
+      dateFlag,
+    },
+    ref,
+  ) => {
+    useEffect(() => {
+      setDayLenth(getInt(moment(date).endOf("month").format("DD")));
+    }, [date]);
+    const [dayLength, setDayLenth] = useState(
+      getInt(moment().endOf("month").format("DD")),
+    );
+    const [grid1, setGrid1] = useState<TableRow[]>([]);
+    const [grid1Dt, setGrid1Dt] = useState<
+      Record<number, Record<string, TableRow[]>>
+    >({});
+
+    useImperativeHandle(ref, () => ({
+      search({ userNameP }) {
+        searchClick();
+      },
+    }));
+
+    async function searchClick() {
+      sendLoading(true);
+      const code = deptCode;
+      const terminal = terminalCode;
+
+      if (!code || !terminal) {
+        sendErr("부서 및 터미널을 선택해주세요");
+        return;
+      }
+      const res = await getApi<Record<number, TableRow[]>>({
+        baseUrl: "INFRA",
+        method: "GET",
+        url: `/work/getWorkM010_002?date=${date}&deptCode=${code}&terminalCode=${terminal}&approveFlag=`,
+        pgmId: pgmId,
+      });
+      sendLoading(false);
+
+      if (res.ok) {
+        if (res.data?.[0] && res.data?.[1]) {
+          setGrid1(res.data[0]);
+          const tmp: Record<number, Record<string, TableRow[]>> = {};
+
+          res.data[1].forEach((r1) => {
+            if (r1?.["USER_SID"] && r1?.["DAY"] && r1?.["SEQ"] !== undefined) {
+              const userTmp = r1["USER_SID"];
+              if (tmp?.[userTmp]) {
+                const dayTmp = r1["DAY"];
+                if (tmp[userTmp]?.[dayTmp]) {
+                  const seqTmp = tmp[userTmp][dayTmp].find(
+                    (st) => st?.["SEQ"] === r1["SEQ"],
+                  );
+                  if (seqTmp) {
+                    Object.assign(seqTmp, r1);
+                  } else {
+                    tmp[userTmp][dayTmp].push(r1);
+                  }
+                } else {
+                  tmp[userTmp] = {
+                    ...tmp[userTmp],
+                    [dayTmp]: [r1],
+                  };
+                }
+              } else {
+                tmp[userTmp] = {
+                  [r1["DAY"]]: [r1],
+                };
+              }
+            }
+          });
+          setGrid1Dt(tmp);
+
+          return;
+        }
+      }
+      setGrid1([]);
+      setGrid1Dt({});
+    }
+
+    return (
+      <div
+        className="rounded-md h-[40rem] w-full overflow-x-auto"
+        style={{ scrollbarGutter: "stable" }}>
+        {/* 헤더 */}
+        <div
+          className={`sticky top-0 z-10 grid items-center border-b-2 border-x-2 border-slate-200 py-[0.1%] h-[2.5rem] bg-[#1F2A44] rounded-t-md shadow-xs`}
+          style={{
+            gridTemplateColumns: `50px 140px repeat(${dayLength},70px) 60px 60px 60px 60px`,
+            width: "max-content",
+            minWidth: "100%",
+          }}>
+          <div
+            className="font-bold text-xs border-r-2 border-slate-300 flex flex-col items-center justify-center h-full text-slate-200"
+            style={{
+              position: "sticky",
+              left: "0px",
+              backgroundColor: "#1F2A44",
+            }}>
+            <div className="text-center">순 번</div>
+          </div>
+          <div
+            style={{
+              position: "sticky",
+              left: "50px",
+              backgroundColor: "#1F2A44",
+            }}
+            className="font-bold text-xs border-r-2 border-slate-300 flex flex-col gap-y-1 h-full justify-center w-full text-slate-200">
+            <div className="text-center">이름 : 아이디</div>
+          </div>
+          {Array.from(
+            {
+              length: dayLength,
+            },
+            (_, i) => {
+              const m = dayjs(date)
+                .locale("ko")
+                .date(i + 1);
+              const dayName = m.format("ddd");
+
+              var color = "text-slate-200";
+
+              if (m.day() === 0) {
+                color = "text-[#C92F34]";
+              } else if (m.day() === 6) {
+                color = "text-blue-500";
+              } else {
+              }
+
+              return (
+                <div
+                  className={`flex flex-col px-[0.5%] justify-center font-bold text-xs ${color} ${i === dayLength - 1 ? "" : "border-r-2 border-slate-300"} h-full`}
+                  key={i}>
+                  <div className="text-center">{i + 1}</div>
+                  <div className="text-center">{dayName}</div>
+                </div>
+              );
+            },
+          )}
+          <div
+            style={{ position: "sticky", right: "180px" }}
+            className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
+            휴무일수
+          </div>
+          <div
+            style={{ position: "sticky", right: "120px" }}
+            className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
+            사용휴무
+          </div>
+          <div
+            style={{ position: "sticky", right: "60px" }}
+            className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
+            사용연차
+          </div>
+          <div
+            style={{ position: "sticky", right: "0px" }}
+            className="font-bold z-[30] text-xs border-r-2 bg-[#1F2A44] border-slate-300 flex items-center justify-center h-full text-slate-200">
+            잔여연차
+          </div>
+        </div>
+        {/* 바디 */}
+        <div
+          className="border-x-2 border-slate-200"
+          style={{ width: "max-content", minWidth: "100%" }}>
+          {grid1.map((v, i) => (
+            <div
+              key={i}
+              className={`grid items-center border-b-2 border-slate-500 ${i % 2 === 0 ? "bg-[#EEF3F8]" : "bg-[#D6E6F0]"} duration-300 origin-top h-[4.5rem] `}
+              style={{
+                gridTemplateColumns: `50px 140px repeat(${dayLength},70px) 60px 60px 60px 60px`,
+                width: "max-content",
+                minWidth: "100%",
+              }}>
+              <div
+                style={{
+                  position: "sticky",
+                  left: "0px",
+                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                }}
+                className="text-center flex flex-col gap-x-1 items-center justify-center w-full h-full">
+                <div className="flex gap-x-1">
+                  {" "}
+                  <span className="h-full flex items-center">{i + 1}</span>
+                </div>
+              </div>
+              <div
+                style={{
+                  position: "sticky",
+                  left: "50px",
+                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                }}
+                className="flex flex-col border-r-2 border-slate-400 gap-y-1 h-full items-center justify-center w-full px-[4%]">
+                <div className="mainInput">
+                  <CommonInput
+                    id={`userId`}
+                    value={`${v["USER_NAME"]} : ${v["USER_ID"]}`}
+                    read={true}
+                  />
+                </div>
+              </div>
+              {Array.from(
+                {
+                  length: dayLength,
+                },
+                (_, idx) => {
+                  return (
+                    <div
+                      className={`flex flex-col h-full items-center justify-center px-[5%]  gap-y-1 cursor-pointer rounded-md`}
+                      key={`${i}${idx}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}>
+                      <div
+                        className={`w-full mainInput flex items-center rounded-md border border-gray-300 bg-white px-3 py-1
+              focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}>
+                        <input
+                          className="w-full h-full text-left focus:outline-none"
+                          readOnly={true}
+                          value={
+                            grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                              "WORK_NAME"
+                            ] || ""
+                          }
+                        />
+                      </div>
+                    </div>
+                  );
+                },
+              )}
+
+              <div
+                style={{
+                  position: "sticky",
+                  right: "180px",
+                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                }}
+                className="flex items-center h-full">
+                <div className="mainInput">
+                  <CommonInput
+                    id={`holiday${i}`}
+                    value={v["HOLIDAY"]}
+                    read={true}
+                  />
+                </div>
+              </div>
+              <div
+                style={{
+                  position: "sticky",
+                  right: "120px",
+                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                }}
+                className="flex items-center h-full">
+                <div className="mainInput">
+                  <CommonInput
+                    id={`holiMinus${i}`}
+                    value={v["HOLIDAY_USE"] || "0"}
+                    read={true}
+                  />
+                </div>
+              </div>
+              <div
+                style={{
+                  position: "sticky",
+                  right: "60px",
+                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                }}
+                className="flex items-center h-full">
+                <div className="mainInput">
+                  <CommonInput
+                    id={`USE_ANN${i}`}
+                    read={true}
+                    value={v["ANN_DAY"] || "0"}
+                  />
+                </div>
+              </div>
+              <div
+                style={{
+                  position: "sticky",
+                  right: "0px",
+                  backgroundColor: i % 2 === 0 ? "#EEF3F8" : "#D6E6F0",
+                }}
+                className="flex items-center h-full"></div>
+            </div>
+          ))}
+        </div>
+        {/* 푸터 */}
+        <div
+          className="sticky bottom-0 z-30 h-[2rem] flex min-w-max"
+          style={{
+            background: "#E4E4E4",
+          }}>
+          <div
+            className="grid items-center"
+            style={{
+              gridTemplateColumns: `50px 140px repeat(${dayLength},70px) 60px 60px 60px 60px`,
+              width: "max-content",
+              minWidth: "100%",
+            }}>
+            <div
+              style={{
+                position: "sticky",
+                left: "0px",
+              }}
+              className="flex items-center h-full"
+            />
+            <div
+              style={{
+                position: "sticky",
+                left: "120px",
+              }}
+              className="flex items-center h-full">
+              {Object.keys(grid1).length}
+            </div>
+          </div>
         </div>
       </div>
     );

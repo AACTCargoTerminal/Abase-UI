@@ -592,7 +592,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
-        url: `/work/setWorkM010_017?date=${date}&teamCode=${hrpatSelect}&terminalCode=${hrmtrSelect}`,
+        url: `/work/setWorkL010_013?date=${date}&teamCode=${hrpatSelect}&terminalCode=${hrmtrSelect}`,
         pgmId: pgmId,
         sucFlag: true,
       });
@@ -621,15 +621,14 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
         const gridDtTmp = Object.keys(userGridData).flatMap((gv) => {
           const dayData = userGridData[gv] ?? [];
 
-          if (
-            dayData.some((ogv) => ogv?.APPROVE_FLAG !== "Y") &&
-            gv !== "00" &&
-            Number(gv) <= approveDay
-          ) {
-            return [gv];
-          }
+          const dayFilter = dayData
+            .filter(
+              (dv) =>
+                dv?.APPROVE_FLAG !== "Y" && Number(dv?.["DAY"]) <= approveDay,
+            )
+            .map((dv) => ({ seq: dv?.["SEQ"] || 0, day: dv?.["DAY"] || "" }));
 
-          return [];
+          return dayFilter;
         });
 
         if (gridDtTmp.length > 0) {
@@ -652,7 +651,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "POST",
-        url: `/work/setWorkM010_032`,
+        url: `/work/setWorkL010_015`,
         params: map,
         pgmId: pgmId,
         sucFlag: true,

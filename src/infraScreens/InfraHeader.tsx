@@ -124,11 +124,10 @@ const InfraHeader = React.memo(
             {routeArray.map((item, index) => (
               <div
                 key={index}
-                className={`text-xs hover:bg-gray-300 h-[2rem] rounded-md flex pl-[1rem] items-center cursor-pointer ${
-                  route?.MENU_ID === item.MENU_ID
-                    ? "bg-blue-300 text-gray-800 font-semibold"
-                    : "text-black bg-gray-200"
-                }`}
+                className={`text-xs hover:bg-gray-300 h-[2rem] rounded-md flex pl-[1rem] items-center cursor-pointer ${route?.MENU_ID === item.MENU_ID
+                  ? "bg-blue-300 text-gray-800 font-semibold"
+                  : "text-black bg-gray-200"
+                  }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectNav(item);
@@ -194,7 +193,7 @@ const InfraHeader = React.memo(
                   onClick={() => {
                     openModal({
                       array: [
-                        { id: "USER_INFO", name: "사용자 정보", param: {} },
+                        { id: "USER_INFO_HR", name: "사용자 정보", param: {} },
                       ],
                     });
                   }}>

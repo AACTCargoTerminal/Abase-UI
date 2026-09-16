@@ -1067,6 +1067,7 @@ export const TableCust2 = React.memo(
           rowRefs.current[selectedRowIndexRef.current]!.style.backgroundColor =
             "";
           selectedRowIndexRef.current = -1;
+          onClick?.({});
         }
       },
     }));
@@ -1090,6 +1091,12 @@ export const TableCust2 = React.memo(
         row["rowId"] = getUUID();
       });
       setCopBody(body.map((b) => ({ ...b })));
+      if (selectedRowIndexRef.current !== -1 && rowRefs !== null) {
+        rowRefs.current[selectedRowIndexRef.current]!.style.backgroundColor =
+          "";
+        selectedRowIndexRef.current = -1;
+        onClick?.({});
+      }
     }, [body]);
 
     const [dtAllOpen, setDtAllOpen] = useState(false);
@@ -1620,7 +1627,7 @@ const RowCust2 = React.memo(
               }}>
               <CellCust2
                 headerType={h}
-                value={h.key === "BTN" ? copRow["rowId"] : copRow[h.key]}
+                value={copRow[h.key]}
                 batch={batch}
                 cellCss={preCell}
                 custValue={onCustumizeText?.(h.key, copRow[h.key])}
@@ -1629,6 +1636,7 @@ const RowCust2 = React.memo(
                 changeValue={(k, v) => {
                   changeValue(idx, k, v);
                 }}
+                guid={copRow["rowId"]}
               />
             </div>
           );
@@ -1655,6 +1663,7 @@ const CellCust2 = React.memo(
     custValue,
     changeFlag,
     newFlag,
+    guid,
   }: {
     headerType: TableHeaderType;
     cellCss?: string;
@@ -1664,6 +1673,7 @@ const CellCust2 = React.memo(
     custValue?: string;
     changeFlag?: boolean;
     newFlag?: boolean;
+    guid: string;
   }) {
     switch (headerType.key) {
       case "CHK":
@@ -1708,22 +1718,6 @@ const CellCust2 = React.memo(
             )}
           </div>
         );
-      case "BTN": {
-        if (headerType.option?.type === "BTN") {
-          return (
-            <Btn
-              txt={headerType.option.set.txt}
-              type={headerType.option.set.type}
-              onClick={() => {
-                if (headerType.option?.type === "BTN") {
-                  headerType.option.set.onClick?.(value);
-                }
-              }}
-            />
-          );
-        }
-        break;
-      }
 
       default: {
         if (batch) {
@@ -1768,6 +1762,31 @@ const CellCust2 = React.memo(
 
           if (headerType.option !== undefined) {
             switch (headerType.option.type) {
+              case "BTN": {
+                if (headerType.option.value[value] === undefined) {
+                  return (
+                    <Btn
+                      txt={headerType.option.set.txt}
+                      type={headerType.option.set.type}
+                      onClick={() => {
+                        if (headerType.option?.type === "BTN") {
+                          headerType.option.set.onClick?.(guid);
+                        }
+                      }}
+                    />
+                  );
+                } else {
+                  return (
+                    <span
+                      className={`flex w-full justify-center no-scrollbar items-center px-[5%] text-center cursor-pointer overflow-x-auto overflow-y-hidden text-nowrap leading-none tableSz truncate h-full ${
+                        changeFlag ? "bg-[#ED1C2499]" : cellCss ? cellCss : ""
+                      }`}
+                      style={{ userSelect: "text" }}>
+                      {headerType.option.value[value]}
+                    </span>
+                  );
+                }
+              }
               case "DROPDOWN": {
                 return (
                   <div>
@@ -1863,7 +1882,8 @@ const CellCust2 = React.memo(
     return (
       prev.headerType === next.headerType &&
       prev.value === next.value &&
-      prev.changeFlag === next.changeFlag
+      prev.changeFlag === next.changeFlag &&
+      prev.guid === next.guid
     );
   },
 );

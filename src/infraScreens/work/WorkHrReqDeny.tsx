@@ -19,7 +19,8 @@ export default function WorkHrReqDeny({
     userId?: string;
     userName?: string;
     date?: string;
-  }>({});
+    type: string;
+  }>({ type: "" });
   useEffect(() => {
     if (param?.["YEAR"]) {
       setParams((prev) => ({ ...prev, year: param["YEAR"] }));
@@ -45,6 +46,9 @@ export default function WorkHrReqDeny({
     if (param?.["REQ_DATE"]) {
       setParams((prev) => ({ ...prev, date: param["REQ_DATE"] }));
     }
+    if (param?.["TYPE"]) {
+      setParams((prev) => ({ ...prev, type: param["TYPE"] }));
+    }
   }, [param]);
 
   useEffect(() => {
@@ -64,7 +68,7 @@ export default function WorkHrReqDeny({
     const ret = await getApi<Record<number, TableRow[]>>({
       baseUrl: "INFRA",
       method: "GET",
-      url: `/work/setWorkM010_036?date=${params?.date?.replaceAll("-", "")}&userSid=${params?.userSid}&seq=${params.seq}&remark=${remark}`,
+      url: `/work/setWorkL010_017?date=${params?.date?.replaceAll("-", "")}&userSid=${params?.userSid}&seq=${params.seq}&remark=${remark}&type=${params.type}`,
       pgmId: pgmId,
       sucFlag: true,
     });

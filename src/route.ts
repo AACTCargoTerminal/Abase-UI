@@ -67,6 +67,7 @@ export const INFRA_ROUTE_MAP: Record<
 
 export const MODAL_ROUTE_IMPORTERS = {
   USER_INFO: () => import("./screens/common/UserInfo"),
+  USER_INFO_HR: () => import("./screens/common/UserHrInfo"),
   FSU_ARR: () => import("./screens/cimp/FsuArr"),
   FSU_RCF: () => import("./screens/cimp/FsuRcf"),
   FSU_NFD: () => import("./screens/cimp/FsuNfd"),
@@ -88,6 +89,7 @@ export const MODAL_ROUTE_IMPORTERS = {
   WORK_HR_REQ_DENY: () => import("./infraScreens/work/WorkHrReqDeny"),
   WORK_TIME_ADM_INS: () => import("./infraScreens/work/WorkTimeAdmInsert"),
   WORK_HR_CAPS: () => import("./infraScreens/work/WorkHrCaps"),
+  WORK_HR_CAPS_SEARCH: () => import("./infraScreens/work/WorkHrCapsSearch"),
 } as const;
 
 export type ModalRouteKey = keyof typeof MODAL_ROUTE_IMPORTERS;
@@ -97,6 +99,7 @@ export const MODAL_ROUTE_MAP: Record<
   React.LazyExoticComponent<React.ComponentType<ModalComp>>
 > = {
   USER_INFO: React.lazy(MODAL_ROUTE_IMPORTERS.USER_INFO),
+  USER_INFO_HR: React.lazy(MODAL_ROUTE_IMPORTERS.USER_INFO_HR),
   FSU_ARR: React.lazy(MODAL_ROUTE_IMPORTERS.FSU_ARR),
   FSU_DEP: React.lazy(MODAL_ROUTE_IMPORTERS.FSU_DEP),
   FSU_DIS: React.lazy(MODAL_ROUTE_IMPORTERS.FSU_DIS),
@@ -118,10 +121,12 @@ export const MODAL_ROUTE_MAP: Record<
   WORK_HR_REQ_DENY: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_HR_REQ_DENY),
   WORK_TIME_ADM_INS: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_TIME_ADM_INS),
   WORK_HR_CAPS: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_HR_CAPS),
+  WORK_HR_CAPS_SEARCH: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_HR_CAPS_SEARCH),
 };
 
 export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
   USER_INFO: [{ txt: "SAVE", type: "SAVE", actionType: "MODAL" }],
+  USER_INFO_HR: [{ txt: "SAVE", type: "SAVE", actionType: "MODAL" }],
   FSU_ARR: [
     { txt: "SAVE", type: "SAVE", actionType: "MODAL" },
     { txt: "SEND SCREEN", type: "NONE", actionType: "ALL" },
@@ -186,6 +191,7 @@ export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
   WORK_HR_REQ_DENY: [{ type: "SAVE", txt: "저장", actionType: "ALL" }],
   WORK_TIME_ADM_INS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
   WORK_HR_CAPS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
+  WORK_HR_CAPS_SEARCH: [],
 };
 
 export const MODAL_SIZE_MAP: Record<
@@ -207,6 +213,7 @@ export const MODAL_SIZE_MAP: Record<
   IFEDI0070: "lg",
   MSITP010: "full",
   USER_INFO: "md",
+  USER_INFO_HR: "md",
   WMSCH0040: "lg",
   USERMODAL: "lg",
   USERRESMGM: "lg",
@@ -214,4 +221,5 @@ export const MODAL_SIZE_MAP: Record<
   WORK_HR_REQ_DENY: "md",
   WORK_TIME_ADM_INS: "md",
   WORK_HR_CAPS: "md",
+  WORK_HR_CAPS_SEARCH: "md",
 };
