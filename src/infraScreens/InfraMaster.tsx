@@ -134,12 +134,13 @@ const InfraMaster = ({ deviceType }: { deviceType: DeviceType }) => {
           );
         })
       ) : (
-        <ApprView
-          pgmId="APPR020"
-          deviceType={deviceType}
-          outParam={(r) => {}}
-          param={{}}
-        />
+        <Board deviceType={deviceType} />
+        // <ApprView
+        //   pgmId="APPR020"
+        //   deviceType={deviceType}
+        //   outParam={(r) => {}}
+        //   param={{}}
+        // />
       )}
 
       {route &&
