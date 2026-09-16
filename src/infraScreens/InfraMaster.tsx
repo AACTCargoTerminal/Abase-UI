@@ -13,6 +13,7 @@ import Board from "../screens/common/Board";
 import Redirect from "../screens/common/Redirect";
 import Modal from "../screens/common/Modal";
 import ErrDevice from "../screens/common/ErrDevice";
+import ApprView from "./appr/ApprView";
 
 function useStableMap<T>() {
   const ref = React.useRef<Record<string, T>>({});
@@ -133,7 +134,12 @@ const InfraMaster = ({ deviceType }: { deviceType: DeviceType }) => {
           );
         })
       ) : (
-        <Board deviceType={deviceType} />
+        <ApprView
+          pgmId="APPR020"
+          deviceType={deviceType}
+          outParam={(r) => {}}
+          param={{}}
+        />
       )}
 
       {route &&
