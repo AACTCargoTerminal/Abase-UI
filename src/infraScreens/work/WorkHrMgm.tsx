@@ -108,8 +108,9 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
       getClass("HRPAT", pgmId, true)
         .then((v) => setHrpat(v))
         .catch((r) => setHrpat([]));
+
       getClass("TRMCD", pgmId, true)
-        .then((v) => setTrmcd(v))
+        .then(async (v) => setTrmcd(v))
         .catch((r) => setTrmcd([]));
     }, []);
 
@@ -1806,17 +1807,16 @@ const SchList = forwardRef<ReqHandle, SetProp>(
 
     async function searchClick() {
       const code = deptCode;
-      const terminal = terminalCode;
 
-      if (!code || !terminal) {
-        sendErr("부서 및 터미널을 선택해주세요");
+      if (!code) {
+        sendErr("부서를 선택해주세요");
         return;
       }
       sendLoading(true);
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
-        url: `/work/getWorkM010_002?date=${date}&deptCode=${code}&terminalCode=${terminal}&approveFlag=`,
+        url: `/work/getWorkM010_002?date=${date}&deptCode=${code}&terminalCode=${terminalCode}&approveFlag=`,
         pgmId: pgmId,
       });
       sendLoading(false);
