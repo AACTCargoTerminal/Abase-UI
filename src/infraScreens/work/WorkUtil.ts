@@ -2398,70 +2398,70 @@ export const setTimeExcelFile = ({
           // 1. 숫자 8자리인지
           if (!/^\d{8}$/.test(startDate)) {
             throw new Error(
-              `${i + 10}행 : 시작일은 YYYYMMDD 형식의 숫자여야 합니다. (${startDate})`,
+              `${i + 2}행 : 시작일은 YYYYMMDD 형식의 숫자여야 합니다. (${startDate})`,
             );
           }
 
           // 2. 실제 날짜인지
           if (!dayjs(startDate, "YYYYMMDD", true).isValid()) {
             throw new Error(
-              `${i + 10}행 : 존재하지 않는 날짜입니다. (${startDate})`,
+              `${i + 2}행 : 존재하지 않는 날짜입니다. (${startDate})`,
             );
           }
 
           // 1. 숫자 8자리인지
           if (!/^\d{8}$/.test(endDate)) {
             throw new Error(
-              `${i + 10}행 : 종료일은 YYYYMMDD 형식의 숫자여야 합니다. (${endDate})`,
+              `${i + 2}행 : 종료일은 YYYYMMDD 형식의 숫자여야 합니다. (${endDate})`,
             );
           }
 
           // 2. 실제 날짜인지
           if (!dayjs(endDate, "YYYYMMDD", true).isValid()) {
             throw new Error(
-              `${i + 10}행 : 존재하지 않는 날짜입니다. (${endDate})`,
+              `${i + 2}행 : 존재하지 않는 날짜입니다. (${endDate})`,
             );
           }
 
           if (!userId.startsWith("AT")) {
             throw new Error(
-              `${i + 10}행 : 사번은 AT로 시작해야 합니다. (${userId})`,
+              `${i + 2}행 : 사번은 AT로 시작해야 합니다. (${userId})`,
             );
           }
 
           if (!/^\d{4}$/.test(startTime)) {
             throw new Error(
-              `${i + 10}행 : 시작시간은 HHmm 형식의 숫자여야 합니다. (${startTime})`,
+              `${i + 2}행 : 시작시간은 HHmm 형식의 숫자여야 합니다. (${startTime})`,
             );
           }
 
           // 2. 실제 시간인지 (00:00 ~ 23:59)
           if (!dayjs(startTime, "HHmm", true).isValid()) {
             throw new Error(
-              `${i + 10}행 : 존재하지 않는 시간입니다. (${startTime})`,
+              `${i + 2}행 : 존재하지 않는 시간입니다. (${startTime})`,
             );
           }
           if (!/^\d{4}$/.test(endTime)) {
             throw new Error(
-              `${i + 10}행 : 종료시간은 HHmm 형식의 숫자여야 합니다. (${endTime})`,
+              `${i + 2}행 : 종료시간은 HHmm 형식의 숫자여야 합니다. (${endTime})`,
             );
           }
 
           // 2. 실제 시간인지 (00:00 ~ 23:59)
           if (!dayjs(endTime, "HHmm", true).isValid()) {
             throw new Error(
-              `${i + 10}행 : 존재하지 않는 시간입니다. (${endTime})`,
+              `${i + 2}행 : 존재하지 않는 시간입니다. (${endTime})`,
             );
           }
 
           if (remark.length === 0) {
-            throw new Error(`${i + 10}행 : 사유는 필수입니다.`);
+            throw new Error(`${i + 2}행 : 사유는 필수입니다.`);
           }
 
           const diff = getDiffDays(startDate, endDate);
 
           if (diff > 1 || diff < 0) {
-            throw new Error(`${i + 10}행 : 날짜 차이가 너무 큽니다.`);
+            throw new Error(`${i + 2}행 : 날짜 차이가 너무 큽니다.`);
           }
         }
 
@@ -2472,6 +2472,7 @@ export const setTimeExcelFile = ({
           reqStartTime: v[4],
           reqEndTime: v[6],
           remark: v[7],
+          deductFlag: v[10],
         }));
 
         if (ret.length === 0) {

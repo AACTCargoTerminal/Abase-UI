@@ -16,7 +16,7 @@ import {
   sendLoading,
 } from "../../Util/Util";
 import { CommonDatePicker, CommonDropDown } from "../../comp/DropDown";
-import { CommonInput, TimeInput } from "../../comp/Input";
+import { CommonChk, CommonInput, TimeInput } from "../../comp/Input";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import { signAsync } from "../../signService";
@@ -92,6 +92,8 @@ export default function WorkTimeInsert({
   const [nighthour, setNighthour] = useState(0);
   const [holihour, setholihour] = useState(0);
   const [holiAddHour, setHoliAddHour] = useState(0);
+
+  const [deductFlag, setDeductFlag] = useState(false);
 
   useEffect(() => {
     if (headerAction?.type) {
@@ -244,6 +246,28 @@ export default function WorkTimeInsert({
     holiAddHour,
   ]);
 
+  const isWithin8Hours = (date1: string, date2: string) => {
+    const parse = (value: string) => {
+      const year = Number(value.substring(0, 4));
+      const month = Number(value.substring(4, 6)) - 1;
+      const day = Number(value.substring(6, 8));
+      const hour = Number(value.substring(8, 10));
+      const minute = Number(value.substring(10, 12));
+
+      return new Date(year, month, day, hour, minute);
+    };
+
+    const d1 = parse(date1);
+    const d2 = parse(date2);
+
+    const diff = Math.abs(d1.getTime() - d2.getTime());
+
+    const twoHours = 2 * 60 * 60 * 1000;
+    const eightHours = 8 * 60 * 60 * 1000;
+
+    return diff >= twoHours && diff <= eightHours;
+  };
+
   return (
     <div className="grid grid-cols-2 py-[1%] px-[5%] gap-y-2 gap-x-2">
       <div className="mainInput">
@@ -263,7 +287,20 @@ export default function WorkTimeInsert({
           labelW="55%"
         />
       </div>
-      <div />
+      {dt?.[params.selectDt]?.["CODE_CODE"] === "X" &&
+      isWithin8Hours(params.date + capsStartTime, capsEndDate + capsEndTime) ? (
+        <div className="mainInput">
+          <CommonChk
+            id="deductFlag"
+            onChange={(v) => setDeductFlag(v)}
+            value={deductFlag}
+            title="휴게 1시간 반영"
+          />
+        </div>
+      ) : (
+        <div />
+      )}
+
       <div className="mainInput col-span-2">
         <CommonInput
           id="workType"
