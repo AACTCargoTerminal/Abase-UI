@@ -124,6 +124,7 @@ export default function WorkTimeInsert({
       setNighthour(tmpDt?.["NIGHT_WORK_HOUR"] || 0);
       setholihour(tmpDt?.["HOLIDAY_WORK_HOUR"] || 0);
       setHoliAddHour(tmpDt?.["HOLIDAY_ADD_HOUR"] || 0);
+      setDeductFlag(tmpDt?.["DEDUCT_FLAG"] === "Y" ? true : false);
     }
   }, [dt, params.selectDt]);
 
@@ -216,6 +217,7 @@ export default function WorkTimeInsert({
     tmp.set("nightHour", nighthour);
     tmp.set("holiHour", holihour);
     tmp.set("holiAddHour", holiAddHour);
+    tmp.set("deductFlag", deductFlag ? "Y" : "N");
     tmp.set("remark", remark);
 
     sendLoading(true);
