@@ -577,6 +577,7 @@ const GRID3_HEADER: TableHeaderType[] = [
   { key: "NIGHT_WORK_HOUR", value: "야간근무", w: "4rem" },
   { key: "HOLIDAY_WORK_HOUR", value: "휴일근무", w: "4rem" },
   { key: "HOLIDAY_ADD_HOUR", value: "휴일연장", w: "4rem" },
+  { key: "DEDUCT_FLAG", value: "휴게반영", w: "4rem" },
   { key: "REMARK", value: "사유", w: "13rem" },
   { key: "APPROVE_NAME", value: "확정자", w: "6rem" },
   { key: "APPROVE_TIME", value: "확정시간", w: "6rem" },
@@ -1804,7 +1805,6 @@ const SchList = forwardRef<ReqHandle, SetProp>(
     }));
 
     async function searchClick() {
-      sendLoading(true);
       const code = deptCode;
       const terminal = terminalCode;
 
@@ -1812,6 +1812,7 @@ const SchList = forwardRef<ReqHandle, SetProp>(
         sendErr("부서 및 터미널을 선택해주세요");
         return;
       }
+      sendLoading(true);
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
