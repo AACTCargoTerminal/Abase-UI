@@ -1860,19 +1860,21 @@ const CellCust2 = React.memo(
 
         return (
           <span
-            className={`flex w-full justify-center no-scrollbar items-center px-[5%] text-center cursor-pointer overflow-x-auto overflow-y-hidden text-nowrap leading-none tableSz truncate h-full ${
+            className={`flex w-full min-w-0 no-scrollbar items-center px-[5%] cursor-text overflow-x-auto overflow-y-hidden leading-none tableSz h-full ${
               changeFlag ? "bg-[#ED1C2499]" : cellCss ? cellCss : ""
             }`}
             style={{ userSelect: "text" }}>
-            {custValue !== undefined
-              ? custValue
-              : value !== undefined && value !== null
-                ? value
-                : headerType.type
-                  ? headerType.type === "STR"
-                    ? ""
-                    : 0
-                  : ""}
+            <span className="mx-auto shrink-0 whitespace-nowrap">
+              {custValue !== undefined
+                ? custValue
+                : value !== undefined && value !== null
+                  ? value
+                  : headerType.type
+                    ? headerType.type === "STR"
+                      ? ""
+                      : 0
+                    : ""}
+            </span>
           </span>
         );
       }
