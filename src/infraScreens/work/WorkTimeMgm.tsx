@@ -15,13 +15,18 @@ import type {
 } from "../../Util/Type";
 import { CommonContainer } from "../../comp/Container";
 import dayjs from "dayjs";
-import { CommonDatePicker, CommonDropDown } from "../../comp/DropDown";
+import {
+  CommonDatePicker,
+  CommonDropDown,
+  CommonMonthDatePicker,
+} from "../../comp/DropDown";
 import { Btn } from "../../comp/Btn";
 import { getApi, openModal, sendErr, sendLoading } from "../../Util/Util";
 import { TableCust, TableCust2 } from "../../comp/Table";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../slices/store";
 import { commonHeader2 } from "../../Util/Header";
+import { CommonChk } from "../../comp/Input";
 
 const GRID1_HEADER: TableHeaderType[] = [
   { key: "CHK", value: "", w: "2rem" },
@@ -66,6 +71,7 @@ const GRID1_HEADER: TableHeaderType[] = [
 const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
   ({ outParam, param, pgmId, deviceType }, ref) => {
     const [date, setDate] = useState(dayjs().format("YYYYMMDD"));
+    const [monDate, setMonDate] = useState(dayjs().format("YYYYMM"));
     const [grid1, setGrid1] = useState<TableRow[]>([]);
     const [grid1Header, setGrid1Header] =
       useState<TableHeaderType[]>(GRID1_HEADER);
@@ -73,6 +79,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
     const userSid = useSelector(
       (state: RootState) => state.user.userInfo?.userSid || 0,
     );
+    const [monFlag, setMonFlag] = useState(false);
 
     useImperativeHandle(ref, () => ({
       onModalPayload(payload: TableRow) {
@@ -119,7 +126,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
       const res = await getApi<Record<number, TableRow[]>>({
         baseUrl: "INFRA",
         method: "GET",
-        url: `/work/getWorkL010_007?date=${date}`,
+        url: `/work/getWorkL010_007?date=${monFlag ? monDate : date}&monFlag=${monFlag ? "Y" : "N"}`,
         pgmId: pgmId,
         sucFlag: true,
       });
@@ -131,7 +138,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
         }
       }
       setGrid1([]);
-    }, [date]);
+    }, [date, monDate, monFlag]);
 
     useEffect(() => {
       if (date) {
@@ -241,17 +248,37 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
           deviceType={deviceType}
           childrenTitle={
             <div
-              className={`flex w-full items-center justify-between ${deviceType === "PC" && "p-[1%]"}`}>
-              <div className="flex gap-3">
-                <div className={`mainInput`}>
-                  <CommonDatePicker
-                    id="date"
-                    onClick={(v) => setDate(v)}
-                    value={date}
-                    title="날짜"
-                    colSize="20%"
-                    arrowNo={false}
+              className={`flex w-full items-center justify-between gap-1 ${deviceType === "PC" && "p-[1%]"}`}>
+              <div
+                className={`flex items-center ${deviceType === "PC" ? "gap-3" : "gap-1"}`}>
+                <div className="mainInput">
+                  <CommonChk
+                    id="month"
+                    onChange={(v) => setMonFlag(v)}
+                    value={monFlag}
+                    title="월 설정"
                   />
+                </div>
+                <div className={`mainInput`}>
+                  {monFlag ? (
+                    <CommonMonthDatePicker
+                      id="monDate"
+                      onClick={(v) => setMonDate(v)}
+                      value={monDate}
+                      title="날짜"
+                      arrowNo={false}
+                      colSize="20%"
+                    />
+                  ) : (
+                    <CommonDatePicker
+                      id="date"
+                      onClick={(v) => setDate(v)}
+                      value={date}
+                      title="날짜"
+                      colSize="20%"
+                      arrowNo={false}
+                    />
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
