@@ -302,34 +302,38 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
                     }}
                   />
                 </div>
-                <div className="mainInput">
-                  <Btn
-                    txt="신규"
-                    type="NONE"
-                    deviceType={deviceType}
-                    onClick={() => {
-                      openModal({
-                        array: [
-                          {
-                            id: "WORK_TIME_INS",
-                            name: "신청서",
-                            param: { date: date, userSid: 0, seq: -1 },
-                          },
-                        ],
-                      });
-                    }}
-                  />
-                </div>
-                <div className="mainInput">
-                  <Btn
-                    txt="삭제"
-                    type="DELETE"
-                    deviceType={deviceType}
-                    onClick={() => {
-                      deleteClick();
-                    }}
-                  />
-                </div>
+                {!monFlag && (
+                  <div className="mainInput">
+                    <Btn
+                      txt="신규"
+                      type="NONE"
+                      deviceType={deviceType}
+                      onClick={() => {
+                        openModal({
+                          array: [
+                            {
+                              id: "WORK_TIME_INS",
+                              name: "신청서",
+                              param: { date: date, userSid: 0, seq: -1 },
+                            },
+                          ],
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+                {!monFlag && (
+                  <div className="mainInput">
+                    <Btn
+                      txt="삭제"
+                      type="DELETE"
+                      deviceType={deviceType}
+                      onClick={() => {
+                        deleteClick();
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           }>
