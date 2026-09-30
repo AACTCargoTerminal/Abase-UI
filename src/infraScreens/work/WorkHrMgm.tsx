@@ -92,6 +92,7 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
     const beforeRef = useRef<ReqHandle>(null);
     const apprRef = useRef<ReqHandle>(null);
     const schRef = useRef<ReqHandle>(null);
+    const schFlag = useRef<boolean>(false);
 
     useImperativeHandle(ref, () => ({
       onModalPayload(payload: TableRow) {
@@ -115,11 +116,19 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
     }, []);
 
     useEffect(() => {
-      searchClick({ num: tabSelect });
+      if (tabSelect === 1 && schFlag.current) {
+        searchClick({ num: 1 });
+        schFlag.current = false;
+      }
     }, [tabSelect]);
 
     const searchClick = useCallback(
       ({ num, userNameP }: { num?: number; userNameP?: string }) => {
+        if (!hrpatSelect) {
+          sendErr("부서를 선택해주세요");
+          return;
+        }
+
         var tmpTabSelect = num ?? tabSelect;
         var tmpUserName = userNameP ?? userName;
         if (tmpTabSelect === 0) {
@@ -132,7 +141,18 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
           schRef.current?.search({ userNameP: tmpUserName });
         }
       },
-      [tabSelect, hrpatSelect, trmcdSelect, startDate, endDate, userName],
+      [
+        tabSelect,
+        hrpatSelect,
+        trmcdSelect,
+        startDate,
+        endDate,
+        userName,
+        beforeRef,
+        reqRef,
+        apprRef,
+        schRef,
+      ],
     );
 
     const getExcel = useCallback(
@@ -506,11 +526,11 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
             dateFlag={dateChk}
             onClick={(r) => {
               setUserName(r?.["USER_NAME"] || "");
-              setTabSelect(1);
               setStartDate(r?.["DATE"] ?? "");
               setEndDate(r?.["DATE"] ?? "");
               setDateChk(true);
-              searchClick({ num: 1, userNameP: r?.["USER_NAME"] || "" });
+              schFlag.current = true;
+              setTabSelect(1);
             }}
           />
         </CommonTab>
@@ -579,6 +599,7 @@ const GRID3_HEADER: TableHeaderType[] = [
   { key: "HOLIDAY_WORK_HOUR", value: "휴일근무", w: "4rem" },
   { key: "HOLIDAY_ADD_HOUR", value: "휴일연장", w: "4rem" },
   { key: "DEDUCT_FLAG", value: "휴게반영", w: "4rem" },
+  { key: "IMG_FLAG", value: "서류유무", w: "4rem" },
   { key: "REMARK", value: "사유", w: "13rem" },
   { key: "APPROVE_NAME", value: "확정자", w: "6rem" },
   { key: "APPROVE_TIME", value: "확정시간", w: "6rem" },
@@ -1274,6 +1295,50 @@ const BeforeList = forwardRef<ReqHandle, SetProp>(
       setGrid4([]);
     }
 
+    const holdDocClick = useCallback(
+      async ({ r, type }: { r: TableRow; type: string }) => {
+        const map = new Map();
+        map.set("year", r?.["YEAR"] || "");
+        map.set("mon", r?.["MON"] || "");
+        map.set("day", r?.["DAY"] || "");
+        map.set("seq", r?.["SEQ"] || "0");
+        map.set("userSid", r?.["USER_SID"] || "0");
+        map.set("imgType", type);
+        sendLoading(true);
+        const ret = await getApi<TableRow[]>({
+          baseUrl: "INFRA",
+          method: "POST",
+          url: `/work/setWorkM010_042`,
+          pgmId: pgmId,
+          sucFlag: true,
+          params: map,
+        });
+        sendLoading(false);
+        if (ret.ok) {
+          if (ret.data) {
+            const tmpArray = ret.data.map((v) => ({
+              type: v?.["mime"] === "application/pdf" ? "PDF" : "IMG",
+              data: base64ToPdfUrl(v?.["data"], v?.["mime"]),
+              subject: v?.["remark"] || "",
+            }));
+
+            openModal({
+              array: [
+                {
+                  id: "MSITP010",
+                  name: "Print",
+                  param: {
+                    files: tmpArray,
+                  },
+                },
+              ],
+            });
+          }
+        }
+      },
+      [],
+    );
+
     return (
       <div className="grid grid-cols-[36%_64%] grid-rows-[10rem_10rem_1fr] gap-2">
         <div className="row-span-3">
@@ -1364,6 +1429,44 @@ const BeforeList = forwardRef<ReqHandle, SetProp>(
             }}
             height="5rem"
             width="100%"
+            rightMenu={[
+              { key: "CAPS", value: "캡스" },
+              { key: "HOLD_DOC", value: "보류 서류" },
+            ]}
+            rightClick={(k, r) => {
+              if (k === "CAPS") {
+                openModal({
+                  array: [
+                    {
+                      id: "WORK_HR_CAPS_SEARCH",
+                      name: "캡스조회",
+                      param: {
+                        ADD_DAY: r?.["ADD_DAY"] || "0",
+                        USER_ID: r?.["USER_ID"] || "",
+                        DATE: r?.["REQ_DATE"] || "",
+                        CAPS_START_TIME: r?.["CAPS_START_TIME"] || "XXXX",
+                        CAPS_END_TIME: r?.["CAPS_END_TIME"] || "XXXX",
+                        USER_SID: r?.["USER_SID"] || 0,
+                        SEQ: r?.["SEQ"] || 0,
+                      },
+                    },
+                  ],
+                });
+              }
+
+              if (k === "HOLD_DOC") {
+                if (r?.["IMG_FLAG"] !== "Y") {
+                  sendErr("서류가 없습니다.");
+                  return;
+                }
+                if (r !== undefined) {
+                  holdDocClick({
+                    r: r,
+                    type: "ALL",
+                  });
+                }
+              }
+            }}
           />
         </CommonContainer>
         <CommonContainer title="LOG">
@@ -1775,7 +1878,7 @@ const SchList = forwardRef<ReqHandle, SetProp>(
 
     useImperativeHandle(ref, () => ({
       search({ userNameP }) {
-        searchClick();
+        searchClick(userNameP);
       },
       nameSend({ userNameP }) {
         if (userNameP) {
@@ -1805,7 +1908,7 @@ const SchList = forwardRef<ReqHandle, SetProp>(
       },
     }));
 
-    async function searchClick() {
+    async function searchClick(userName: string) {
       const code = deptCode;
 
       if (!code) {
@@ -1854,8 +1957,32 @@ const SchList = forwardRef<ReqHandle, SetProp>(
               }
             }
           });
-          setGrid1Dt(tmp);
-          setOrgGrid1Dt(tmp);
+
+          if (userName) {
+            var tmpArray: TableRow[] = [];
+            var tmp2: Record<number, Record<string, TableRow[]>> = {};
+
+            Object.values(res.data[0]).forEach((v) => {
+              if (String(v?.["USER_NAME"] || "").includes(userName)) {
+                if (v?.["USER_SID"]) {
+                  tmpArray.push(v);
+                  tmp2[v["USER_SID"]] = orgGrid1Dt[v["USER_SID"]];
+                }
+              }
+            });
+
+            if (Object.keys(tmp2).length === 0) {
+              setGrid1(orgGrid1);
+              setGrid1Dt(orgGrid1Dt);
+            } else {
+              setGrid1(tmpArray);
+              setGrid1Dt(tmp2);
+            }
+          } else {
+            setGrid1Dt(tmp);
+            setOrgGrid1Dt(tmp);
+          }
+
           return;
         }
       }
