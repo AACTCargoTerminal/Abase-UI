@@ -67,7 +67,7 @@ export const INFRA_ROUTE_MAP: Record<
   INFRASYS110: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS110),
   APPR010: React.lazy(ROUTE_INFRA_IMPORTERS.APPR010), //IFAPR0010,/infraScreens/appr/,APPRMGM,결재 관리,MDI
   APPR020: React.lazy(ROUTE_INFRA_IMPORTERS.APPR020), //IFAPR0020,/infraScreens/appr/,APPRVIEW,결재 관리,MDI
-};  
+};
 
 export const MODAL_ROUTE_IMPORTERS = {
   USER_INFO: () => import("./screens/common/UserInfo"),
@@ -219,7 +219,7 @@ export const MODAL_SIZE_MAP: Record<
   USER_INFO: "md",
   USER_INFO_HR: "md",
   WMSCH0040: "lg",
-  USERMODAL: "lg",
+  USERMODAL: "xl",
   USERRESMGM: "lg",
   WORK_TIME_INS: "md",
   WORK_HR_REQ_DENY: "md",

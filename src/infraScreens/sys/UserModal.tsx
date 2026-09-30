@@ -12,6 +12,16 @@ import { CommonDatePicker, CommonDropDown } from "../../comp/DropDown";
 import { commonHeader2, commonHeader6 } from "../../Util/Header";
 import { MdHorizontalRule } from "react-icons/md";
 
+const LANGUAGE_OPTIONS: TableRow[] = [
+  { CODE_CODE: "KOR", CODE_NAME: "한국어" },
+  { CODE_CODE: "ENG", CODE_NAME: "영어" },
+];
+
+const AUTH_YN_OPTIONS: TableRow[] = [
+  { CODE_CODE: "Y", CODE_NAME: "예" },
+  { CODE_CODE: "N", CODE_NAME: "아니오" },
+];
+
 export default function UserModal({
   param,
   onClose,
@@ -64,12 +74,15 @@ export default function UserModal({
 
   useEffect(() => {
     trmcdSelect();
-    hrpatSelect();
+    comcdSelect();
+    brncdSelect();
+    dptcdSelect();
   }, []);
 
   const [trmcd, setTrmcd] = useState<TableRow[]>([]); //터미널
-  const [hrpat, setHrpat] = useState<TableRow[]>([]); //부서
-
+  const [dptcd, setDptcd] = useState<TableRow[]>([]); //부서
+  const [comcd, setComcd] = useState<TableRow[]>([]); //법인
+  const [brncd, setBrncd] = useState<TableRow[]>([]); //지사
   const [dt, setDt] = useState<TableRow>({});
 
   const deleteClick = useCallback(async () => {
@@ -95,9 +108,19 @@ export default function UserModal({
     setTrmcd(data);
   }
 
-  async function hrpatSelect() {
-    const data = await getClass("HRPAT", pgmId);
-    setHrpat(data);
+  async function comcdSelect() {
+    const data = await getClass("COMCD", pgmId);
+    setComcd(data);
+  }
+
+  async function brncdSelect() {
+    const data = await getClass("BRNCD", pgmId);
+    setBrncd(data);
+  }
+
+  async function dptcdSelect() {
+    const data = await getClass("DPTCD", pgmId);
+    setDptcd(data);
   }
 
   const saveClick = useCallback(async () => {
@@ -111,14 +134,23 @@ export default function UserModal({
     map.set("USER_ID_CHANGE", dt?.["USER_ID_CHANGE"] || "");
     map.set("USER_PASSWORD", dt?.["USER_PASSWORD"] || "");
     map.set("USER_PASSWORD_HP", dt?.["USER_PASSWORD_HP"] || "");
+    map.set("DEPARTMENT_CODE", dt?.["DEPARTMENT_CODE"] || "");
+    map.set("DEFAULT_LANGUAGE_CODE", dt?.["DEFAULT_LANGUAGE_CODE"] || "KOR",);
     map.set("USER_NAME1", dt?.["USER_NAME1"] || "");
     map.set("USER_NAME2", dt?.["USER_NAME2"] || "");
-    map.set("TEAM_CODE", dt?.["TEAM_CODE"] || "");
-    map.set("TEAM_DATE", dt?.["TEAM_DATE"] || "");
-    map.set("JOIN_DAY", dt?.["JOIN_DAY"] || "");
-    map.set("GROUP_JOIN_DAY", dt?.["GROUP_JOIN_DAY"] || "");
     map.set("TERMINAL_CODE", dt?.["TERMINAL_CODE"] || "");
     map.set("TERMINAL_NAME", dt?.["TERMINAL_NAME"] || "");
+    map.set("AUTH_WORKTIMELINE_YN", dt?.["AUTH_WORKTIMELINE_YN"] || "N");
+    map.set("AUTH_BOARD_WRITE_YN", dt?.["AUTH_BOARD_WRITE_YN"] || "N");
+    map.set("AUTH_IN_CANCEL_YN", dt?.["AUTH_IN_CANCEL_YN"] || "N");
+    map.set("AUTH_BOARDHP_WRITE_YN", dt?.["AUTH_BOARDHP_WRITE_YN"] || "N");
+    map.set("AUTH_IT_BOARD_YN", dt?.["AUTH_IT_BOARD_YN"] || "N");
+    map.set("COMPANY_CODE", dt?.["COMPANY_CODE"] || "");
+    map.set("BRANCH_CODE", dt?.["BRANCH_CODE"] || "");
+    map.set("EMAIL_ADDRESS", dt?.["EMAIL_ADDRESS"] || "");
+    map.set("PHONE_NO", dt?.["PHONE_NO"] || "");
+    map.set("MOBILE_NO", dt?.["MOBILE_NO"] || "");
+    map.set("FAX_NO", dt?.["FAX_NO"] || "");
 
     const ret = await getApi<Record<number, TableRow[]>>({
       baseUrl: "AUTH",
@@ -136,163 +168,404 @@ export default function UserModal({
   }, [dt, param]);
 
   return (
-    <div className="px-[3%] py-[5%] grid grid-cols-3 gap-5">
-      <div className="mainInput">
-        <CommonInput
-          id="userId"
-          value={dt?.["USER_ID"]}
-          check={true}
-          label="사용자 ID"
-          labelW="45%"
-          read={userParam.length > 0}
-          onChange={(v) => setDt((prev) => ({ ...prev, ["USER_ID"]: v }))}
-        />
-      </div>
-      <div className="mainInput">
-        <CommonInput
-          id="pass"
-          value={dt?.["USER_PASSWORD"]}
-          check={true}
-          label="암호"
-          labelW="40%"
-          onChange={(v) => setDt((prev) => ({ ...prev, ["USER_PASSWORD"]: v }))}
-        />
-      </div>
-      <div className="mainInput">
-        <CommonInput
-          id="hpPass"
-          value={dt?.["USER_PASSWORD_HP"]}
-          check={true}
-          label="자료실 암호"
-          labelW="40%"
-          onChange={(v) =>
-            setDt((prev) => ({ ...prev, ["USER_PASSWORD_HP"]: v }))
-          }
-        />
-      </div>
-      {userParam.length > 0 ? (
-        <div className="mainInput">
-          <CommonInput
-            id="userIdChange"
-            value={dt?.["USER_ID_CHANGE"]}
-            check={true}
-            label="변경할 사용자 ID"
-            labelW="45%"
-            onChange={(v) =>
-              setDt((prev) => ({ ...prev, ["USER_ID_CHANGE"]: v }))
+    <div className="px-[3%] py-[3%] flex flex-col gap-5">
+
+      {/* ==================== 기본 정보 ==================== */}
+      <div className="border border-blue-200 rounded-lg overflow-hidden">
+        <div className="bg-blue-50 px-4 py-2 font-bold text-lg">
+          기본 정보
+        </div>
+
+        <div className="p-5 grid grid-cols-3 gap-5">
+          <div className="mainInput">
+            <CommonInput
+              id="userId"
+              value={dt?.["USER_ID"]}
+              check={true}
+              label="사용자 ID"
+              labelW="35%"
+              read={userParam.length > 0}
+              onChange={(v) =>
+                setDt((prev) => ({ ...prev, ["USER_ID"]: v }))
+              }
+            />
+          </div>
+
+          <div className="mainInput">
+            <CommonInput
+              id="pass"
+              value={dt?.["USER_PASSWORD"]}
+              check={true}
+              label="암호"
+              labelW="35%"
+              onChange={(v) =>
+                setDt((prev) => ({ ...prev, ["USER_PASSWORD"]: v }))
+              }
+            />
+          </div>
+
+          <div className="mainInput">
+            <CommonInput
+              id="hpPass"
+              value={dt?.["USER_PASSWORD_HP"]}
+              check={true}
+              label="자료실 암호"
+              labelW="35%"
+              onChange={(v) =>
+                setDt((prev) => ({ ...prev, ["USER_PASSWORD_HP"]: v }))
+              }
+            />
+          </div>
+
+          {userParam.length > 0 ? (
+            <div className="mainInput">
+              <CommonInput
+                id="userIdChange"
+                value={dt?.["USER_ID_CHANGE"]}
+                check={true}
+                label="변경할 사용자 ID"
+                labelW="35%"
+                onChange={(v) =>
+                  setDt((prev) => ({ ...prev, ["USER_ID_CHANGE"]: v }))
+                }
+              />
+            </div>
+          ) : (
+            <div />
+          )}
+
+          <div className="mainInput">
+            <CommonInput
+              id="username1"
+              value={dt?.["USER_NAME1"]}
+              check={true}
+              label="공용 사용자명"
+              labelW="35%"
+              onChange={(v) =>
+                setDt((prev) => ({ ...prev, ["USER_NAME1"]: v }))
+              }
+            />
+          </div>
+
+          <div className="mainInput">
+            <CommonInput
+              id="username2"
+              value={dt?.["USER_NAME2"]}
+              check={true}
+              label="한글 사용자명"
+              labelW="35%"
+              onChange={(v) =>
+                setDt((prev) => ({ ...prev, ["USER_NAME2"]: v }))
+              }
+            />
+          </div>
+
+          <div className="mainInput">
+            <CommonInput
+              id="phoneNo"
+              value={dt?.["PHONE_NO"] || ""}
+              label="전화 번호"
+              labelW="35%"
+              onChange={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  PHONE_NO: v,
+                }))
+              }
+            />
+          </div>
+
+          <div className="mainInput">
+            <CommonInput
+              id="mobileNo"
+              value={dt?.["MOBILE_NO"] || ""}
+              label="휴대전화 번호"
+              labelW="35%"
+              onChange={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  MOBILE_NO: v,
+                }))
+              }
+            />
+          </div>
+
+          <div className="mainInput">
+            <CommonInput
+              id="faxNo"
+              value={dt?.["FAX_NO"] || ""}
+              label="Fax 번호"
+              labelW="35%"
+              onChange={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  FAX_NO: v,
+                }))
+              }
+            />
+          </div>
+          <div className="mainInput">
+            <CommonInput
+              id="emailAddress"
+              value={dt?.["EMAIL_ADDRESS"] || ""}
+              label="이메일 주소"
+              labelW="35%"
+              onChange={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  EMAIL_ADDRESS: v,
+                }))
+              }
+            />
+          </div>
+          <CommonDropDown
+            id="defaultLanguageCode"
+            data={LANGUAGE_OPTIONS}
+            header={commonHeader2}
+            dropHeight="10rem"
+            inputKey={{
+              key: "CODE_CODE",
+              showKey: "0",
+              value: dt?.["DEFAULT_LANGUAGE_CODE"] || "KOR",
+            }}
+            onClick={(v) =>
+              setDt((prev) => ({
+                ...prev,
+                DEFAULT_LANGUAGE_CODE: v["CODE_CODE"],
+              }))
             }
+            check={true}
+            title="사용 언어"
+            labelW="36.5%"
           />
         </div>
-      ) : (
-        <div />
-      )}
+      </div>
 
-      <div className="mainInput">
-        <CommonInput
-          id="username1"
-          value={dt?.["USER_NAME1"]}
-          check={true}
-          label="공용어 사용자 명"
-          labelW="40%"
-          onChange={(v) => setDt((prev) => ({ ...prev, ["USER_NAME1"]: v }))}
-        />
+
+      {/* ==================== 소속 정보 ==================== */}
+      <div className="border border-blue-200 rounded-lg overflow-hidden">
+        <div className="bg-blue-50 px-4 py-2 font-bold text-lg">
+          소속 정보
+        </div>
+        <div className="p-5 grid grid-cols-3 gap-5">
+          <div className="mainInput">
+            <CommonDropDown
+              id="trmcd"
+              data={trmcd}
+              header={commonHeader6}
+              dropHeight="15rem"
+              inputKey={{
+                key: "CODE_CODE",
+                showKey: "0",
+                value: dt?.["TERMINAL_CODE"] || "",
+              }}
+              onClick={(v) => {
+                setDt((prev) => ({
+                  ...prev,
+                  ["TERMINAL_CODE"]: v["CODE_CODE"],
+                  ["TERMINAL_NAME"]: v["CODE_NAME2"],
+                }));
+              }}
+              check={true}
+              title="터미널"
+              labelW="35%"
+            />
+          </div>
+          <div className="mainInput">
+            <CommonDropDown
+              id="dptcd"
+              data={dptcd}
+              header={commonHeader2}
+              dropHeight="15rem"
+              inputKey={{
+                key: "CODE_CODE",
+                showKey: "0",
+                value: dt?.["DEPARTMENT_CODE"] || "",
+              }}
+              onClick={(v) => {
+                setDt((prev) => ({
+                  ...prev,
+                  ["DEPARTMENT_CODE"]: v["CODE_CODE"],
+                  ["DEPARTMENT_DATE"]: "",
+                }));
+              }}
+              check={true}
+              title="부서"
+              labelW="35%"
+              find={true}
+            />
+          </div>
+
+          {/* 한 칸 띄우기 */}
+          <div />
+
+          <div className="mainInput">
+            <CommonDropDown
+              id="companyCode"
+              data={comcd}
+              header={commonHeader2}
+              dropHeight="15rem"
+              inputKey={{
+                key: "CODE_CODE",
+                showKey: "0",
+                value: dt?.["COMPANY_CODE"] || "",
+              }}
+              onClick={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  COMPANY_CODE: v["CODE_CODE"],
+                }))
+              }
+              check={true}
+              title="법인"
+              labelW="35%"
+            />
+          </div>
+
+          <div className="mainInput">
+            <CommonDropDown
+              id="branchCode"
+              data={brncd}
+              header={commonHeader2}
+              dropHeight="15rem"
+              inputKey={{
+                key: "CODE_CODE",
+                showKey: "0",
+                value: dt?.["BRANCH_CODE"] || "",
+              }}
+              onClick={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  BRANCH_CODE: v["CODE_CODE"],
+                }))
+              }
+              check={true}
+              title="지사"
+              labelW="35%"
+            />
+          </div>
+        </div>
       </div>
-      <div className="mainInput">
-        <CommonInput
-          id="username2"
-          value={dt?.["USER_NAME2"]}
-          check={true}
-          label="한글 사용자 명"
-          labelW="40%"
-          onChange={(v) => setDt((prev) => ({ ...prev, ["USER_NAME2"]: v }))}
-        />
+
+
+      {/* ==================== 권한 설정 ==================== */}
+      <div className="border border-blue-200 rounded-lg overflow-hidden">
+        <div className="bg-blue-50 px-4 py-2 font-bold text-lg">
+          권한 설정
+        </div>
+
+        {/* 권한은 그림처럼 4열 */}
+        <div className="p-5 grid grid-cols-3 gap-5">
+          <div className="mainInput">
+            <CommonDropDown
+              id="authWorktimeline"
+              data={AUTH_YN_OPTIONS}
+              header={commonHeader2}
+              dropHeight="8rem"
+              inputKey={{
+                key: "CODE_CODE",
+                showKey: "0",
+                value: dt?.["AUTH_WORKTIMELINE_YN"] || "N",
+              }}
+              onClick={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  AUTH_WORKTIMELINE_YN: v["CODE_CODE"],
+                }))
+              }
+              title="근무자"
+              labelW="35%"
+            />
+          </div>
+          <div className="mainInput">
+            <CommonDropDown
+              id="authBoardWrite"
+              data={AUTH_YN_OPTIONS}
+              header={commonHeader2}
+              dropHeight="8rem"
+              inputKey={{
+                key: "CODE_CODE",
+                showKey: "0",
+                value: dt?.["AUTH_BOARD_WRITE_YN"] || "N",
+              }}
+              onClick={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  AUTH_BOARD_WRITE_YN: v["CODE_CODE"],
+                }))
+              }
+              title="SAMS 게시판"
+              labelW="35%"
+            />
+          </div>
+
+          <div className="mainInput">
+            <CommonDropDown
+              id="authBoardhpWrite"
+              data={AUTH_YN_OPTIONS}
+              header={commonHeader2}
+              dropHeight="8rem"
+              inputKey={{
+                key: "CODE_CODE",
+                showKey: "0",
+                value: dt?.["AUTH_BOARDHP_WRITE_YN"] || "N",
+              }}
+              onClick={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  AUTH_BOARDHP_WRITE_YN: v["CODE_CODE"],
+                }))
+              }
+              title="홈페이지 게시판"
+              labelW="35%"
+            />
+          </div>
+
+          <div className="mainInput">
+            <CommonDropDown
+              id="authInCancel"
+              data={AUTH_YN_OPTIONS}
+              header={commonHeader2}
+              dropHeight="8rem"
+              inputKey={{
+                key: "CODE_CODE",
+                showKey: "0",
+                value: dt?.["AUTH_IN_CANCEL_YN"] || "N",
+              }}
+              onClick={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  AUTH_IN_CANCEL_YN: v["CODE_CODE"],
+                }))
+              }
+              title="반입 취소"
+              labelW="35%"
+            />
+          </div>
+
+          <div className="mainInput">
+            <CommonDropDown
+              id="authItBoard"
+              data={AUTH_YN_OPTIONS}
+              header={commonHeader2}
+              dropHeight="8rem"
+              inputKey={{
+                key: "CODE_CODE",
+                showKey: "0",
+                value: dt?.["AUTH_IT_BOARD_YN"] || "N",
+              }}
+              onClick={(v) =>
+                setDt((prev) => ({
+                  ...prev,
+                  AUTH_IT_BOARD_YN: v["CODE_CODE"],
+                }))
+              }
+              title="IT 지원"
+              labelW="35%"
+            />
+          </div>
+        </div>
       </div>
-      <div className="mainInput">
-        <CommonDropDown
-          id="hrpat"
-          data={hrpat}
-          header={commonHeader2}
-          dropHeight="15rem"
-          inputKey={{
-            key: "CODE_CODE",
-            showKey: "0",
-            value: dt?.["TEAM_CODE"] || "",
-          }}
-          onClick={(v) => {
-            setDt((prev) => ({
-              ...prev,
-              ["TEAM_CODE"]: v["CODE_CODE"],
-              ["TEAM_DATE"]: "",
-            }));
-          }}
-          check={true}
-          title="부서"
-          labelW="30%"
-          find={true}
-        />
-      </div>
-      <div className="mainInput">
-        <DateInput
-          id="hrpatSelect"
-          value={dt?.["TEAM_DATE"] || ""}
-          label="부서 적용일"
-          onChange={(v) => setDt((prev) => ({ ...prev, ["TEAM_DATE"]: v }))}
-          check={true}
-          labelW="40%"
-        />
-      </div>
-      <div className="mainInput">
-        <CommonDropDown
-          id="trmcd"
-          data={trmcd}
-          header={commonHeader6}
-          dropHeight="15rem"
-          inputKey={{
-            key: "CODE_CODE",
-            showKey: "0",
-            value: dt?.["TERMINAL_CODE"] || "",
-          }}
-          onClick={(v) => {
-            setDt((prev) => ({
-              ...prev,
-              ["TERMINAL_CODE"]: v["CODE_CODE"],
-              ["TERMINAL_NAME"]: v["CODE_NAME2"],
-            }));
-          }}
-          check={true}
-          title="터미널"
-          labelW="40%"
-        />
-      </div>
-      <div className="mainInput">
-        <DateInput
-          id="joinDate"
-          value={dt?.["JOIN_DAY"] || ""}
-          onChange={(v) =>
-            setDt((prev) => ({
-              ...prev,
-              ["JOIN_DAY"]: v,
-            }))
-          }
-          label="입사일"
-          check={true}
-          labelW="28%"
-        />
-      </div>
-      <div className="mainInput">
-        <DateInput
-          id="groupJoinDate"
-          value={dt?.["GROUP_JOIN_DAY"] || ""}
-          onChange={(v) =>
-            setDt((prev) => ({
-              ...prev,
-              ["GROUP_JOIN_DAY"]: v,
-            }))
-          }
-          label="그룹 입사일"
-          labelW="40%"
-        />
-      </div>
-    </div>
+    </div >
   );
 }
