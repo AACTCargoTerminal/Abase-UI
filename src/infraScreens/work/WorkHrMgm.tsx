@@ -1966,14 +1966,14 @@ const SchList = forwardRef<ReqHandle, SetProp>(
               if (String(v?.["USER_NAME"] || "").includes(userName)) {
                 if (v?.["USER_SID"]) {
                   tmpArray.push(v);
-                  tmp2[v["USER_SID"]] = orgGrid1Dt[v["USER_SID"]];
+                  tmp2[v["USER_SID"]] = tmp[v["USER_SID"]];
                 }
               }
             });
 
             if (Object.keys(tmp2).length === 0) {
-              setGrid1(orgGrid1);
-              setGrid1Dt(orgGrid1Dt);
+              setGrid1(res.data[0]);
+              setGrid1Dt(tmp);
             } else {
               setGrid1(tmpArray);
               setGrid1Dt(tmp2);
