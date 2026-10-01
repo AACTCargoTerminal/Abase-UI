@@ -880,15 +880,17 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
                     />
                   </div>
                 )}
-                <div className="mainInput">
-                  <Btn
-                    txt="일괄 재처리"
-                    type="SAVE"
-                    onClick={() => {
-                      reloadClick();
-                    }}
-                  />
-                </div>
+                {(hrpatSelect?.["VALUE1_NUMBER"] || 0) === 0 && (
+                  <div className="mainInput">
+                    <Btn
+                      txt="일괄 재처리"
+                      type="SAVE"
+                      onClick={() => {
+                        reloadClick();
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             }>
             <TableCust2
