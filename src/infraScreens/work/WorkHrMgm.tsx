@@ -124,11 +124,6 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
 
     const searchClick = useCallback(
       ({ num, userNameP }: { num?: number; userNameP?: string }) => {
-        if (!hrpatSelect) {
-          sendErr("부서를 선택해주세요");
-          return;
-        }
-
         var tmpTabSelect = num ?? tabSelect;
         var tmpUserName = userNameP ?? userName;
         if (tmpTabSelect === 0) {
@@ -653,6 +648,11 @@ const searchClick = async ({
   otFlag?: string;
   pgmId: string;
 }): Promise<TableRow[]> => {
+  if (!deptCode) {
+    sendErr("부서를 선택해주세요");
+    return [];
+  }
+
   const map = new Map<string, any>();
   map.set("type", type);
   map.set("reqFlag", reqFlag || "");
