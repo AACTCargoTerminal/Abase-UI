@@ -107,7 +107,7 @@ export async function getApi<T>({
       validateStatus: () => true,
     };
 
-    if (method === "POST" && files) {
+    if (files) {
       const fd = new FormData();
 
       if (params && params.size > 0) {
@@ -118,7 +118,7 @@ export async function getApi<T>({
       for (const f of files) fd.append("files", f);
       config.data = fd;
     } else {
-      if (method === "POST" && params && params.size > 0) {
+      if (params && params.size > 0) {
         const obj = Object.fromEntries(params);
         config.data = JSON.stringify(obj);
         config.headers = {
