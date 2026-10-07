@@ -537,6 +537,7 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
 export default WorkHrMgm;
 
 const GRID1_HEADER: TableHeaderType[] = [
+  { key: "CHK", value: "", w: "3rem" },
   { key: "REQ_DATE", value: "날짜", w: "6rem", sum: 0 },
   { key: "REQ_NAME", value: "요청명", w: "8rem" },
   { key: "DEPT_NAME", value: "파트명", w: "8rem" },
@@ -577,13 +578,11 @@ const GRID3_HEADER: TableHeaderType[] = [
     key: "REQ_START_TIME",
     value: "요청시작",
     w: "6rem",
-    option: { type: "WRITE" },
   },
   {
     key: "REQ_END_TIME",
     value: "요청종료",
     w: "6rem",
-    option: { type: "WRITE" },
   },
   {
     key: "ADD_WORK_HOUR",
@@ -648,7 +647,7 @@ const searchClick = async ({
   otFlag?: string;
   pgmId: string;
 }): Promise<TableRow[]> => {
-  if (!deptCode) {
+  if (!deptCode && type !== "REQ") {
     sendErr("부서를 선택해주세요");
     return [];
   }
@@ -785,11 +784,12 @@ const ReqList = forwardRef<ReqHandle, SetProp>(
 
     const reqClick = useCallback(
       async (reqFlag: string) => {
-        const tmp = grid1Select;
-        if (tmp && Object.keys(tmp).length > 0) {
+        const arraTmp = grid1Ref.current?.getChk();
+        if (arraTmp && Object.keys(arraTmp).length > 0) {
+          const reqArray = Object.values(arraTmp).map((v) => v);
           sendLoading(true);
           const map = new Map<string, any>();
-          map.set("reqArray", [tmp]);
+          map.set("reqArray", reqArray);
           map.set("reqFlag", reqFlag);
           const ret = await getApi<Record<number, TableRow[]>>({
             baseUrl: "INFRA",

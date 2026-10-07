@@ -1449,17 +1449,6 @@ export const TableCust2 = React.memo(
                     if (prevIdx >= 0 && rowRefs.current[prevIdx]) {
                       rowRefs.current[prevIdx]!.style.backgroundColor = "";
                     }
-
-                    if (rowRefs.current[i]) {
-                      if (r["CHK"]) {
-                        rowRefs.current[i]!.style.backgroundColor = "#B2C4E0";
-                      } else if (pre && pre.lines) {
-                        rowRefs.current[i]!.style.backgroundColor = pre.lines;
-                      } else {
-                        rowRefs.current[i]!.style.backgroundColor = "#C5D3E8";
-                      }
-                    }
-
                     const flag = await handleClick(r);
 
                     if (flag) {
@@ -1469,6 +1458,13 @@ export const TableCust2 = React.memo(
                       selectedRowIndexRef.current = -1;
                     } else {
                       selectedRowIndexRef.current = i;
+                    }
+                    if (rowRefs.current[i]) {
+                      if (pre && pre.lines) {
+                        rowRefs.current[i]!.style.backgroundColor = pre.lines;
+                      } else {
+                        rowRefs.current[i]!.style.backgroundColor = "#FAEDB6";
+                      }
                     }
                   }}
                   rightClickRow={(x, y) => {
@@ -1495,52 +1491,40 @@ export const TableCust2 = React.memo(
           {/* 푸터 */}
           {sumCount !== 0 && (
             <div
-              className="sticky bottom-0 z-30 h-[2rem] flex min-w-max"
+              className="sticky bottom-0 z-30 flex min-w-max h-[2rem]"
               style={{
                 background: "#E4E4E4",
               }}>
               {header.map((item, i) => {
                 if (item.disable) {
-                  return <div className="w-0"></div>;
+                  return null;
                 }
-                const isSticky = i < fixCount;
-                const left = offsets[i];
 
-                if (item.sum || item.sum === 0) {
-                  return (
-                    <span
-                      key={i}
-                      className={`${
-                        isSticky ? "z-20" : "z-10"
-                      } tableSz text-center shrink-0 font-semibold px-2 py-2 overflow-hidden`}
-                      style={{
-                        width: item.w,
-                        position: isSticky ? "sticky" : undefined,
-                        left: isSticky ? left : undefined,
-                        background: "#E4E4E4",
-                      }}>
-                      {item.sum === 0
+                const isSticky = i < fixCount;
+
+                // 헤더와 동일하게
+                const left = isSticky ? `${offsets[i]}rem` : undefined;
+
+                return (
+                  <span
+                    key={i}
+                    className={`${
+                      isSticky ? "z-20" : "z-10"
+                    } tableSz text-center shrink-0 font-semibold px-2 overflow-hidden
+             h-[2rem] flex items-center justify-center`}
+                    style={{
+                      width: item.w,
+                      position: isSticky ? "sticky" : undefined,
+                      left,
+                      background: "#E4E4E4",
+                    }}>
+                    {item.sum || item.sum === 0
+                      ? item.sum === 0
                         ? sumArray[item.key] || "0"
-                        : sumArray[item.key].toFixed(item.sum) || ""}
-                    </span>
-                  );
-                } else {
-                  return (
-                    <span
-                      key={i}
-                      className={`${
-                        isSticky ? "z-20" : "z-10"
-                      } tableSz text-center shrink-0 font-semibold px-2 py-2 overflow-hidden`}
-                      style={{
-                        width: item.w,
-                        position: isSticky ? "sticky" : undefined,
-                        left: isSticky ? left : undefined,
-                        background: "#E4E4E4",
-                      }}>
-                      {""}
-                    </span>
-                  );
-                }
+                        : sumArray[item.key]?.toFixed(item.sum) || ""
+                      : ""}
+                  </span>
+                );
               })}
             </div>
           )}

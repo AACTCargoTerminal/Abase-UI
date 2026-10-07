@@ -662,6 +662,34 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
       }
     }, [date, chkSelect, approveDay]);
 
+    const delClick = useCallback(async () => {
+      const tmp = Object.keys(chkSelect)
+        .filter((v) => chkSelect[getInt(v)] === true)
+        .map((v) => getInt(v));
+      if (tmp.length === 0) {
+        sendErr("선택한 근무자가 없습니다.");
+        return;
+      }
+
+      const map = new Map<string, any>();
+      map.set("date", date);
+      map.set("userArray", tmp);
+      sendLoading(true);
+
+      const res = await getApi<Record<number, TableRow[]>>({
+        baseUrl: "INFRA",
+        method: "DELETE",
+        url: `/work/setWorkM010_021`,
+        params: map,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+      sendLoading(false);
+      if (res.ok) {
+        await searchClick();
+      }
+    }, [date, chkSelect, approveDay]);
+
     const saveClick = useCallback(async () => {
       const tmp = hrmtr.find((v) => v?.["CODE_CODE"] === hrmtrSelect);
       if (!tmp) {
@@ -1077,6 +1105,15 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                     onClick={() => {
                       setChangeGrid1Dt({});
                       setGrid1Dt(orgGrid1Dt);
+                    }}
+                  />
+                </div>
+                <div className="mainInput">
+                  <Btn
+                    txt="삭제"
+                    type="PRINT"
+                    onClick={() => {
+                      delClick();
                     }}
                   />
                 </div>
