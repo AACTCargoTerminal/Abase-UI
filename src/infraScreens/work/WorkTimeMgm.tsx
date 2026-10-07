@@ -30,6 +30,7 @@ import { CommonChk } from "../../comp/Input";
 
 const GRID1_HEADER: TableHeaderType[] = [
   { key: "CHK", value: "", w: "2rem" },
+  { key: "TIME_DATE", value: "날짜", w: "5rem" },
   { key: "USER_NAME", value: "이름", w: "3rem", sum: 0 },
   { key: "SEQ", value: "순번", w: "2rem" },
   { key: "DETAIL_STATUS", value: "최신상태", w: "6rem" },
@@ -112,6 +113,8 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
             return { ...v, w: "5rem" };
           } else if (v.key === "CHK") {
             return { ...v, w: "3rem" };
+          } else if (v.key === "TIME_DATE") {
+            return { ...v, w: "6rem" };
           }
           return { ...v };
         });
@@ -344,7 +347,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
             header={grid1Header}
             height="30rem"
             width="100%"
-            fixCount={2}
+            fixCount={3}
             doubleClick={(v) => {
               if (v["USER_SID"] !== userSid) {
                 sendErr("본인계정만 수정가능합니다.");
