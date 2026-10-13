@@ -220,7 +220,7 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
               value: "서류제출",
               option: {
                 type: "BTN",
-                value: {},
+                value: { A: "" },
                 set: {
                   txt: "제출",
                   type: "PRINT",
