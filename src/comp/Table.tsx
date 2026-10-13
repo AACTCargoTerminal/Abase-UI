@@ -1596,7 +1596,7 @@ const RowCust2 = React.memo(
             pre && pre.cells?.[h.key] ? pre.cells?.[h.key] : undefined;
           return (
             <div
-              key={idx + h.key}
+              key={j + h.key}
               className={`${
                 isSticky ? "z-20" : "z-10"
               } shrink-0 w-full h-full flex items-center cursor-pointer justify-center text-xs text-center shrink-0 active:bg-black font-semibold ${
@@ -1749,15 +1749,17 @@ const CellCust2 = React.memo(
               case "BTN": {
                 if (headerType.option.value[value] === undefined) {
                   return (
-                    <Btn
-                      txt={headerType.option.set.txt}
-                      type={headerType.option.set.type}
-                      onClick={() => {
+                    <div
+                      className="flex text-[#148FD0] hover:bg-[#45D7F915] 
+                      hover:text-blue-800 w-full h-full items-center justify-center"
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (headerType.option?.type === "BTN") {
                           headerType.option.set.onClick?.(guid);
                         }
-                      }}
-                    />
+                      }}>
+                      {headerType.option.set.txt}
+                    </div>
                   );
                 } else {
                   return (
