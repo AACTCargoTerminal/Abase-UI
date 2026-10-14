@@ -76,6 +76,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
     const [grid1, setGrid1] = useState<TableRow[]>([]);
     const [grid1Header, setGrid1Header] =
       useState<TableHeaderType[]>(GRID1_HEADER);
+    const [grid1Select, setGrid1Select] = useState<TableRow>({});
     const grid1Ref = useRef<TableHandle | null>(null);
     const userSid = useSelector(
       (state: RootState) => state.user.userInfo?.userSid || 0,
@@ -91,38 +92,44 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
     }));
 
     useEffect(() => {
-      if (deviceType === "PC") {
-        const tmp: TableHeaderType[] = GRID1_HEADER.map((v) => {
-          if (v.key === "USER_NAME") {
-            return { ...v, w: "5rem" };
-          } else if (v.key === "SEQ") {
-            return { ...v, w: "3rem" };
-          } else if (v.key === "REQ_START_TIME") {
-            return { ...v, w: "5rem" };
-          } else if (v.key === "REQ_END_TIME") {
-            return { ...v, w: "5rem" };
-          } else if (v.key === "CAPS_START_TIME") {
-            return { ...v, w: "5rem" };
-          } else if (v.key === "CAPS_END_TIME") {
-            return { ...v, w: "5rem" };
-          } else if (v.key === "ADD_WORK_HOUR") {
-            return { ...v, w: "5rem" };
-          } else if (v.key === "NIGHT_WORK_HOUR") {
-            return { ...v, w: "5rem" };
-          } else if (v.key === "HOLIDAY_WORK_HOUR") {
-            return { ...v, w: "5rem" };
-          } else if (v.key === "CHK") {
-            return { ...v, w: "3rem" };
-          } else if (v.key === "TIME_DATE") {
-            return { ...v, w: "6rem" };
-          }
-          return { ...v };
-        });
-        setGrid1Header(tmp);
-      } else {
-        setGrid1Header([...GRID1_HEADER]);
+      setGrid1([]);
+      const tmp: TableHeaderType[] = GRID1_HEADER.map((v) => {
+        const widthMap: Record<string, string> = {
+          USER_NAME: "5rem",
+          SEQ: "3rem",
+          REQ_START_TIME: "5rem",
+          REQ_END_TIME: "5rem",
+          CAPS_START_TIME: "5rem",
+          CAPS_END_TIME: "5rem",
+          ADD_WORK_HOUR: "5rem",
+          NIGHT_WORK_HOUR: "5rem",
+          HOLIDAY_WORK_HOUR: "5rem",
+          CHK: "3rem",
+          TIME_DATE: "6rem",
+        };
+
+        return {
+          ...v,
+          ...(deviceType === "PC" && widthMap[v.key]
+            ? { w: widthMap[v.key] }
+            : {}),
+        };
+      });
+
+      if (monFlag) {
+        const index = tmp.findIndex((item) => item.key === "USER_NAME");
+
+        if (index !== -1) {
+          tmp.splice(index + 1, 0, {
+            key: "WORK_TYPE_NAME",
+            value: "예정근무",
+            w: deviceType === "PC" ? "7rem" : "5rem",
+          });
+        }
       }
-    }, [deviceType]);
+
+      setGrid1Header(tmp);
+    }, [deviceType, monFlag]);
 
     const searchClick = useCallback(async () => {
       sendLoading(true);
@@ -174,7 +181,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
           return;
         }
         const sendTmp = tmpTable.map((v) => ({
-          date: date,
+          date: String(v["TIME_DATE"]).replaceAll("-", ""),
           SEQ: v["SEQ"],
           USER_SID: v["USER_SID"],
         }));
@@ -197,7 +204,7 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
       } else {
         sendErr("체크한 항목이 없습니다.");
       }
-    }, [grid1Ref.current]);
+    }, [grid1Ref.current, monFlag]);
 
     const manualDown = useCallback(async () => {
       const ret = await getApi<string>({
@@ -305,38 +312,45 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
                     }}
                   />
                 </div>
-                {!monFlag && (
-                  <div className="mainInput">
-                    <Btn
-                      txt="신규"
-                      type="NONE"
-                      deviceType={deviceType}
-                      onClick={() => {
-                        openModal({
-                          array: [
-                            {
-                              id: "WORK_TIME_INS",
-                              name: "신청서",
-                              param: { date: date, userSid: 0, seq: -1 },
-                            },
-                          ],
-                        });
-                      }}
-                    />
-                  </div>
-                )}
-                {!monFlag && (
-                  <div className="mainInput">
-                    <Btn
-                      txt="삭제"
-                      type="DELETE"
-                      deviceType={deviceType}
-                      onClick={() => {
-                        deleteClick();
-                      }}
-                    />
-                  </div>
-                )}
+                <div className="mainInput">
+                  <Btn
+                    txt="신규"
+                    type="NONE"
+                    deviceType={deviceType}
+                    onClick={() => {
+                      var tmpDate = date;
+                      if (monFlag) {
+                        if (Object.keys(grid1Select).length === 0) {
+                          sendErr("선택한 행이 없습니다.");
+                          return;
+                        }
+                        tmpDate = String(grid1Select["TIME_DATE"]).replaceAll(
+                          "-",
+                          "",
+                        );
+                      }
+                      openModal({
+                        array: [
+                          {
+                            id: "WORK_TIME_INS",
+                            name: "신청서",
+                            param: { date: tmpDate, userSid: 0, seq: -1 },
+                          },
+                        ],
+                      });
+                    }}
+                  />
+                </div>
+                <div className="mainInput">
+                  <Btn
+                    txt="삭제"
+                    type="DELETE"
+                    deviceType={deviceType}
+                    onClick={() => {
+                      deleteClick();
+                    }}
+                  />
+                </div>
               </div>
             </div>
           }>
@@ -348,18 +362,27 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
             height="30rem"
             width="100%"
             fixCount={3}
+            onClick={async (r) => {
+              setGrid1Select(r);
+              return false;
+            }}
             doubleClick={(v) => {
               if (v["USER_SID"] !== userSid) {
                 sendErr("본인계정만 수정가능합니다.");
                 return;
               }
+              var tmpDate = date;
+              if (monFlag) {
+                tmpDate = String(v["TIME_DATE"]).replaceAll("-", "");
+              }
+
               openModal({
                 array: [
                   {
                     id: "WORK_TIME_INS",
                     name: "신청서",
                     param: {
-                      date: date,
+                      date: tmpDate,
                       userSid: v["USER_SID"],
                       seq: v["SEQ"],
                     },
