@@ -191,7 +191,7 @@ const RoutePanel = React.memo(
   },
   (prev, next) => {
     if (!next.isActive) return true;
-    return prev.param === next.param;
+    return prev.param === next.param && prev.deviceType === next.deviceType;
   },
 );
 

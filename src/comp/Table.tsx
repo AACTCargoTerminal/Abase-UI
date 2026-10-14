@@ -1109,7 +1109,7 @@ export const TableCust2 = React.memo(
     >();
     const filterSplit = useMemo(() => filterFlag?.split(";"), [filterFlag]);
     const [filterTxt, setFilterTxt] = useState("");
-    const timer = useRef<number | null>(null);
+    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
       document.getElementById("findStr")?.focus({ preventScroll: true });
@@ -1177,21 +1177,60 @@ export const TableCust2 = React.memo(
       [copHeader, copBody],
     );
 
-    const handleClick = (r: TableRow): Promise<boolean> => {
-      return new Promise((resolve) => {
-        if (timer.current !== null) {
-          window.clearTimeout(timer.current);
-          timer.current = null;
-          doubleClick?.(r);
-          resolve(true);
-        } else {
-          timer.current = window.setTimeout(async () => {
-            const flag = (await onClick?.(r)) ?? false;
-            timer.current = null;
-            resolve(flag);
-          }, 250);
+    const handleClick = (r: TableRow, i: number) => {
+      if (timer.current !== null) {
+        window.clearTimeout(timer.current);
+        timer.current = null;
+
+        // 더블클릭 시 모든 선택 해제
+        const prevIdx = selectedRowIndexRef.current;
+
+        if (prevIdx >= 0 && rowRefs.current[prevIdx]) {
+          rowRefs.current[prevIdx]!.style.backgroundColor = "";
         }
-      });
+
+        selectedRowIndexRef.current = -1;
+        doubleClick?.(r);
+        return;
+      }
+
+      timer.current = window.setTimeout(async () => {
+        timer.current = null;
+
+        const prevIdx = selectedRowIndexRef.current;
+
+        // 동일 행 클릭 시 선택 해제
+        if (prevIdx === i) {
+          if (rowRefs.current[i]) {
+            rowRefs.current[i]!.style.backgroundColor = "";
+          }
+
+          selectedRowIndexRef.current = -1;
+          await onClick?.({});
+          return;
+        }
+
+        // 기존 선택 해제
+        if (prevIdx >= 0 && rowRefs.current[prevIdx]) {
+          rowRefs.current[prevIdx]!.style.backgroundColor = "";
+        }
+
+        const flag = (await onClick?.(r)) ?? false;
+
+        if (flag) {
+          selectedRowIndexRef.current = -1;
+          return;
+        }
+
+        // 새로운 행 선택
+        selectedRowIndexRef.current = i;
+
+        const pre = onRowPrepared?.(r, i);
+
+        if (rowRefs.current[i]) {
+          rowRefs.current[i]!.style.backgroundColor = pre?.lines || "#FAEDB6";
+        }
+      }, 250);
     };
 
     return (
@@ -1435,38 +1474,7 @@ export const TableCust2 = React.memo(
                     }
                   }}
                   rowRefSetter={(el) => (rowRefs.current[i] = el)}
-                  onClick={async () => {
-                    const pre = onRowPrepared ? onRowPrepared(r, i) : undefined;
-                    const prevIdx = selectedRowIndexRef.current;
-
-                    if (prevIdx === i && rowRefs.current[prevIdx]) {
-                      rowRefs.current[prevIdx]!.style.backgroundColor = "";
-                      selectedRowIndexRef.current = -1;
-                      await onClick?.({});
-                      return;
-                    }
-
-                    if (prevIdx >= 0 && rowRefs.current[prevIdx]) {
-                      rowRefs.current[prevIdx]!.style.backgroundColor = "";
-                    }
-                    const flag = await handleClick(r);
-
-                    if (flag) {
-                      if (prevIdx >= 0 && rowRefs.current[prevIdx]) {
-                        rowRefs.current[prevIdx]!.style.backgroundColor = "";
-                      }
-                      selectedRowIndexRef.current = -1;
-                    } else {
-                      selectedRowIndexRef.current = i;
-                    }
-                    if (rowRefs.current[i]) {
-                      if (pre && pre.lines) {
-                        rowRefs.current[i]!.style.backgroundColor = pre.lines;
-                      } else {
-                        rowRefs.current[i]!.style.backgroundColor = "#FAEDB6";
-                      }
-                    }
-                  }}
+                  onClick={() => handleClick(r, i)}
                   rightClickRow={(x, y) => {
                     setMenuOpen({ x: x, y: y, value: r });
                   }}
