@@ -750,7 +750,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
               USER_ID: v,
               CLOSE_FLAG:
                 orgGrid1.find((orgV) => orgV?.["USER_ID"] === v)?.[
-                  "CLOSE_FLAG"
+                "CLOSE_FLAG"
                 ] || "N",
               dayArray: dayArray,
             });
@@ -977,24 +977,13 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
               </div>
               <div className="mainInput">
                 <Btn
-                  txt="스케줄 메뉴얼"
+                  txt="스케줄 등록 메뉴얼"
                   type="PRINT"
                   onClick={() => {
-                    manualDown("MANAGE_MANUAL.pdf");
+                    manualDown("SCHEDULE_MANUAL.pdf");
                   }}
                 />
               </div>
-              {postnSelect?.["VALUE2_CHAR"] === "Y" && (
-                <div className="mainInput">
-                  <Btn
-                    txt="팀장 메뉴얼"
-                    type="EXCEL"
-                    onClick={() => {
-                      manualDown("LEADER_MANUAL.pdf");
-                    }}
-                  />
-                </div>
-              )}
             </div>
           </CommonContainer>
         </div>
@@ -1300,11 +1289,10 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                       }}
                       className="flex flex-col border-r-2 border-slate-400 gap-y-1 h-full items-center justify-center w-full px-[4%]">
                       <div
-                        className={`w-[10%] rounded-md border-2 ${
-                          v?.["CLOSE_FLAG"] === "Y"
+                        className={`w-[10%] rounded-md border-2 ${v?.["CLOSE_FLAG"] === "Y"
                             ? "border-black"
                             : "border-transparent"
-                        }`}
+                          }`}
                       />
                       <div className="mainInput">
                         <CommonInput
@@ -1329,110 +1317,101 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                             }}>
                             <div className="flex w-full items-center justify-center gap-x-1">
                               <div
-                                className={`w-[10%] rounded-md border-2 ${
-                                  grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[1]?.[
+                                className={`w-[10%] rounded-md border-2 ${grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[1]?.[
                                     "WORK_TYPE_CODE"
                                   ]
                                     ? "border-red-500"
                                     : "border-transparent"
-                                }`}
+                                  }`}
                               />
                               <div
-                                className={`w-[10%] rounded-md border-2 ${
-                                  grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                className={`w-[10%] rounded-md border-2 ${grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
                                     "APPROVE_FLAG"
                                   ] === "Y"
                                     ? "border-green-500"
                                     : "border-transparent"
-                                }`}
+                                  }`}
                               />
                               <div
-                                className={`w-[10%] rounded-md border-2 ${
-                                  grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                className={`w-[10%] rounded-md border-2 ${grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
                                     "REQ_START_TIME"
                                   ] ||
-                                  grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[1]?.[
+                                    grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[1]?.[
                                     "REQ_START_TIME"
-                                  ]
+                                    ]
                                     ? "border-blue-500"
                                     : "border-transparent"
-                                }`}
+                                  }`}
                               />
                               <div
-                                className={`w-[10%] rounded-md border-2 ${
-                                  !grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                className={`w-[10%] rounded-md border-2 ${!grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
                                     "WORK_TERMINAL_CODE"
                                   ] &&
-                                  !grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[1]?.[
+                                    !grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[1]?.[
                                     "WORK_TERMINAL_CODE"
-                                  ]
+                                    ]
                                     ? "border-transparent"
                                     : "border-violet-500"
-                                }`}
+                                  }`}
                               />
                               <div
-                                className={`w-[10%] rounded-md border-2 ${
-                                  !grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                className={`w-[10%] rounded-md border-2 ${!grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
                                     "ADD_WORK_HOUR"
                                   ] &&
-                                  !grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[1]?.[
+                                    !grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[1]?.[
                                     "ADD_WORK_HOUR"
-                                  ]
+                                    ]
                                     ? "border-transparent"
                                     : "border-stone-500"
-                                }`}
+                                  }`}
                               />
                               <div
-                                className={`w-[10%] rounded-md border-2 ${
-                                  grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                                className={`w-[10%] rounded-md border-2 ${grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
                                     "HR_STATUS"
                                   ]
                                     ? "border-[#36004D]"
                                     : "border-transparent"
-                                }`}
+                                  }`}
                               />
                             </div>
                             <div
-                              className={`flex w-[70%] rounded-md border-2 items-center justify-center gap-x-1 ${
-                                !grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
+                              className={`flex w-[70%] rounded-md border-2 items-center justify-center gap-x-1 ${!grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
                                   "DETAIL_STATUS"
                                 ]
                                   ? "border-transparent"
-                                  : `border-${
-                                      hrreq.find(
-                                        (fv) =>
-                                          fv?.["CODE_CODE"] ===
-                                          grid1Dt?.[v["USER_SID"]]?.[
-                                            idx + 1
-                                          ]?.[0]?.["DETAIL_STATUS"],
-                                      )?.["VALUE5_CHAR"]
-                                    }`
-                              }`}
+                                  : `border-${hrreq.find(
+                                    (fv) =>
+                                      fv?.["CODE_CODE"] ===
+                                      grid1Dt?.[v["USER_SID"]]?.[
+                                      idx + 1
+                                      ]?.[0]?.["DETAIL_STATUS"],
+                                  )?.["VALUE5_CHAR"]
+                                  }`
+                                }`}
                               style={{
                                 borderColor: hrreq.find(
                                   (fv) =>
                                     fv?.["CODE_CODE"] ===
                                     grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
-                                      "DETAIL_STATUS"
+                                    "DETAIL_STATUS"
                                     ],
                                 )?.["VALUE5_CHAR"]
                                   ? hrreq.find(
-                                      (fv) =>
-                                        fv?.["CODE_CODE"] ===
-                                        grid1Dt?.[v["USER_SID"]]?.[
-                                          idx + 1
-                                        ]?.[0]?.["DETAIL_STATUS"],
-                                    )?.["VALUE5_CHAR"]
+                                    (fv) =>
+                                      fv?.["CODE_CODE"] ===
+                                      grid1Dt?.[v["USER_SID"]]?.[
+                                      idx + 1
+                                      ]?.[0]?.["DETAIL_STATUS"],
+                                  )?.["VALUE5_CHAR"]
                                   : "transparent",
                               }}></div>
                             <div
-                              className={`w-full mainInput flex items-center ${
-                                changeGrid1Dt?.[v["USER_ID"]]?.[idx + 1]?.[0]?.[
+                              className={`w-full mainInput flex items-center ${changeGrid1Dt?.[v["USER_ID"]]?.[idx + 1]?.[0]?.[
                                   "WORK_TYPE_CODE"
                                 ]
                                   ? "bg-red-300"
                                   : "bg-white"
-                              } rounded-md border border-gray-300 px-3 py-1
+                                } rounded-md border border-gray-300 px-3 py-1
               focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500`}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1449,13 +1428,13 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                                 readOnly={true}
                                 value={
                                   grid1Dt?.[v["USER_SID"]]?.[idx + 1]?.[0]?.[
-                                    "WORK_NAME"
+                                  "WORK_NAME"
                                   ] || ""
                                 }
                               />
                               <div className="rounded-full iconSize cursor-pointer hover:bg-gray-200 p-[1%]">
                                 {opcodCss.mainIdx === i &&
-                                opcodCss.subIdx === idx ? (
+                                  opcodCss.subIdx === idx ? (
                                   <IoIosArrowUp className="text-gray-500" />
                                 ) : (
                                   <IoIosArrowDown className="text-gray-500" />

@@ -722,11 +722,57 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
       [],
     );
 
+    const manualDown = useCallback(async () => {
+      const ret = await getApi<string>({
+        baseUrl: "INFRA",
+        method: "GET",
+        url: `/work/getManual?fileName=OT_MANUAL.pdf`,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+
+      if (ret.ok) {
+        if (ret.data) {
+          const base64 = ret.data;
+
+          const byteCharacters = atob(base64);
+
+          const byteNumbers = new Array(byteCharacters.length);
+
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+
+          const blob = new Blob([byteArray], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+
+          const a = document.createElement("a");
+
+          a.href = url;
+          a.download = `${dayjs().format("YYYY_MM_DD")}시간 외 근무 관리 메뉴얼.pdf`;
+
+          document.body.appendChild(a);
+
+          a.click();
+
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }, []);
+
+
     return (
       <div className="px-[1%] flex flex-col gap-3">
-        <div className="grid grid-cols-[0.45fr_0.25fr_0.25fr] gap-5">
+        <div className="grid grid-cols-[0.49fr_0.25fr_0.25fr] gap-5">
           <CommonContainer title="부서 및 터미널">
-            <div className="grid grid-cols-[0.3fr_0.25fr_0.1fr_0.15fr_0.15fr] items-center gap-3">
+            <div className="grid grid-cols-[0.35fr_0.35fr_0.1fr_0.1fr_0.1fr_0.1fr] items-center gap-2">
               <div className="mainInput">
                 {" "}
                 <CommonDropDown
@@ -764,6 +810,9 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
               </div>
               <div className="mainInput">
                 <Btn txt="조회" type="SEARCH" onClick={() => searchClick()} />
+              </div>
+              <div className="mainInput">
+                <Btn txt="메뉴얼" type="PRINT" onClick={() => { manualDown() }} />
               </div>
               {hrpatSelect?.["VALUE2_NUMBER"] > 0 && (
                 <>
