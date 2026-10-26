@@ -124,10 +124,11 @@ const InfraHeader = React.memo(
             {routeArray.map((item, index) => (
               <div
                 key={index}
-                className={`text-xs hover:bg-gray-300 h-[2rem] rounded-md flex pl-[1rem] items-center cursor-pointer ${route?.MENU_ID === item.MENU_ID
-                  ? "bg-blue-300 text-gray-800 font-semibold"
-                  : "text-black bg-gray-200"
-                  }`}
+                className={`text-xs hover:bg-gray-300 h-[2rem] rounded-md flex pl-[1rem] items-center cursor-pointer ${
+                  route?.MENU_ID === item.MENU_ID
+                    ? "bg-blue-300 text-gray-800 font-semibold"
+                    : "text-black bg-gray-200"
+                }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectNav(item);
@@ -154,8 +155,11 @@ const InfraHeader = React.memo(
           <div className="flex flex-col gap-1 items-end">
             <span className="text-white font-bold">{userid}</span>
             <span className="text-white">
-              {user.find((v) => v["CLASS_CODE"] === "HRPAT")?.["CODE_NAME"] ||
-                ""}{" "}
+              {user
+                .filter((item) => item.CLASS_CODE === "HRPAT")
+                .sort((a, b) => b.VALUE1.localeCompare(a.VALUE1))[0]?.[
+                "CODE_NAME"
+              ] || ""}
               : {username}
             </span>
           </div>
