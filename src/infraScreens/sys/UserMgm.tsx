@@ -276,7 +276,7 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
                 txt="Upload"
                 type="NONE"
                 onClick={() => {
-                  document.getElementById("excelFile")?.click();
+                  document.getElementById("excelFileUser")?.click();
                 }}
               />
             </div>
@@ -321,7 +321,7 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
           />
         </CommonContainer>
         <input
-          id="excelFile"
+          id="excelFileUser"
           type="file"
           accept=".xlsx,.xls"
           onChange={(e) => uploadClick(e)}

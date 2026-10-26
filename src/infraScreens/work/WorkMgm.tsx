@@ -949,7 +949,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
                   txt="엑셀 업로드"
                   type="EXCEL"
                   onClick={() => {
-                    document.getElementById("excelFile")?.click();
+                    document.getElementById("excelSchFile")?.click();
                   }}
                 />
               </div>
@@ -1784,7 +1784,7 @@ const WorkMgm = forwardRef<PageHandle, DefInfraComp>(
             document.body,
           )}
         <input
-          id="excelFile"
+          id="excelSchFile"
           type="file"
           accept=".xlsx,.xls"
           onChange={(e) => setWorkM010_013(e)}

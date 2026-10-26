@@ -120,11 +120,20 @@ const WorkTimeMgm = forwardRef<PageHandle, DefInfraComp>(
         const index = tmp.findIndex((item) => item.key === "USER_NAME");
 
         if (index !== -1) {
-          tmp.splice(index + 1, 0, {
-            key: "WORK_TYPE_NAME",
-            value: "예정근무",
-            w: deviceType === "PC" ? "7rem" : "5rem",
-          });
+          tmp.splice(
+            index + 1,
+            0,
+            {
+              key: "WORK_TYPE_NAME",
+              value: "예정근무",
+              w: deviceType === "PC" ? "6rem" : "5rem",
+            },
+            {
+              key: "INS_WORK_TYPE_NAME",
+              value: "신청근무",
+              w: deviceType === "PC" ? "6rem" : "5rem",
+            },
+          );
         }
       }
 
