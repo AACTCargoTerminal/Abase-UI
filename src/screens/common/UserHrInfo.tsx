@@ -160,9 +160,13 @@ export default function UserHrInfo({
           relationResponse.data?.[0] ?? [];
 
         // 부서 및 부서 적용일
-        const departmentRow = relationRows.find(
-          (row) => row["CLASS_CODE"] === "HRPAT",
-        );
+        const departmentRow = relationRows
+          .filter((row) => row["CLASS_CODE"] === "HRPAT")
+          .sort((a, b) =>
+            String(b["VALUE1"] || "").localeCompare(
+              String(a["VALUE1"] || "")
+            )
+          )[0];
 
         // 입사일
         const joinDateRow = relationRows.find(
