@@ -22,6 +22,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import { signAsync } from "../../signService";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../slices/store";
+import { commonHeader4 } from "../../Util/Header";
 
 dayjs.extend(customParseFormat);
 
@@ -71,9 +72,13 @@ export default function WorkTimeInsert({
         setManualFlag(false);
       })
       .catch((v) => setManualFlag(false));
+    getClass("OPCOD", pgmId)
+      .then((v) => setOpcod(v))
+      .catch((v) => setOpcod([]));
   }, []);
 
   const [manualFlag, setManualFlag] = useState<boolean>(false);
+  const [opcod, setOpcod] = useState<TableRow[]>([]);
 
   const [params, setParams] = useState<{
     date: string;
@@ -94,6 +99,7 @@ export default function WorkTimeInsert({
   const [holiAddHour, setHoliAddHour] = useState(0);
 
   const [deductFlag, setDeductFlag] = useState(false);
+  const [insCode, setInsCode] = useState("");
 
   useEffect(() => {
     if (headerAction?.type) {
@@ -125,6 +131,7 @@ export default function WorkTimeInsert({
       setholihour(tmpDt?.["HOLIDAY_WORK_HOUR"] || 0);
       setHoliAddHour(tmpDt?.["HOLIDAY_ADD_HOUR"] || 0);
       setDeductFlag(tmpDt?.["DEDUCT_FLAG"] === "Y" ? true : false);
+      setInsCode(tmpDt?.["INS_CODE_CODE"] || "");
     }
   }, [dt, params.selectDt]);
 
@@ -194,8 +201,8 @@ export default function WorkTimeInsert({
       return;
     }
 
-    if (!remark) {
-      sendErr("사유를 입력하여주세요.");
+    if (!insCode) {
+      sendErr("신청근무는 필수 사항입니다.");
       return;
     }
 
@@ -219,6 +226,7 @@ export default function WorkTimeInsert({
     tmp.set("holiAddHour", holiAddHour);
     tmp.set("deductFlag", deductFlag ? "Y" : "N");
     tmp.set("remark", remark);
+    tmp.set("insWorkTypeCode", insCode);
 
     sendLoading(true);
     const res = await getApi<TableRow[]>({
@@ -300,7 +308,7 @@ export default function WorkTimeInsert({
           />
         </div>
       ) : (
-        <div />
+        <div className="mainInput" />
       )}
 
       <div className="mainInput col-span-2">
@@ -310,6 +318,24 @@ export default function WorkTimeInsert({
           read={true}
           label="예정근무"
           labelW="25%"
+        />
+      </div>
+      <div className="mainInput col-span-2">
+        <CommonDropDown
+          data={opcod}
+          dropHeight="20rem"
+          header={[
+            { key: "CODE_CODE", value: "Code", w: "4rem" },
+            { key: "CODE_NAME", value: "Name", w: "8rem" },
+          ]}
+          id="opcod"
+          inputKey={{ key: "CODE_CODE", showKey: "0 > 1", value: insCode }}
+          onClick={(v) => {
+            setInsCode(v?.["CODE_CODE"] || "");
+          }}
+          title="신청근무"
+          labelW="26%"
+          find={true}
         />
       </div>
       {dt?.[params.selectDt]?.["CAPS_START_TIME"] &&

@@ -572,6 +572,7 @@ const GRID2_HEADER: TableHeaderType[] = [
 ];
 
 const GRID3_HEADER: TableHeaderType[] = [
+  { key: "CODE_NAME", value: "신청근무", w: "6rem" },
   { key: "CAPS_START_TIME", value: "캡스시작", w: "6rem" },
   { key: "CAPS_END_TIME", value: "캡스종료", w: "6rem" },
   {

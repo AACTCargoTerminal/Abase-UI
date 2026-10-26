@@ -36,6 +36,8 @@ const GRID1_HEADER: TableHeaderType[] = [
   { key: "USER_NAME", value: "성명", w: "5rem" },
   { key: "DETAIL_STATUS", value: "최신상태", w: "7rem" },
   { key: "SEQ", value: "순번", w: "3rem" },
+  { key: "CODE_NAME", value: "예정근무", w: "6rem" },
+  { key: "INS_CODE_NAME", value: "신청근무", w: "6rem" },
   { key: "CAPS_START_TIME", value: "캡스시작시간", w: "5rem" },
   { key: "CAPS_END_TIME", value: "캡스종료시간", w: "5rem" },
   { key: "REQ_START_TIME", value: "근무시작시간", w: "5rem" },
@@ -68,7 +70,7 @@ const GRID1_HEADER: TableHeaderType[] = [
     sum: 1,
     type: "DOUBLE",
   },
-  { key: "REMARK", value: "사유", w: "13rem" },
+  { key: "REMARK", value: "사유", w: "12rem" },
   { key: "APPROVE_ID", value: "확정ID", w: "6rem" },
   { key: "APPROVE_TIME", value: "확정시간", w: "7rem" },
   { key: "SIGN_FLAG", value: "서명유무", w: "4rem" },
@@ -109,7 +111,14 @@ const GRID1_HEADER_1: TableHeaderType[] = [
   },
 ];
 
-const FILTER_TAB: string[] = ["보류", "신청완료", "인사팀요청", "확정", "합계"];
+const FILTER_TAB: string[] = [
+  "보류",
+  "신청완료",
+  "인사팀요청",
+  "확정",
+  "합계",
+  "CAPS",
+];
 
 const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
   ({ outParam, param, pgmId, deviceType }, ref) => {
@@ -278,6 +287,25 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
             },
           },
         ]);
+      } else if (selectTab === 5) {
+        const headers = GRID1_HEADER.filter(
+          (v) =>
+            ![
+              "APPROVE_ID",
+              "APPROVE_TIME",
+              "SUBMIT_FLAG",
+              "SIGN_FLAG",
+              "HOLIDAY_ADD_HOUR",
+              "HOLIDAY_WORK_HOUR",
+              "NIGHT_WORK_HOUR",
+              "ADD_WORK_HOUR",
+              "REQ_START_TIME",
+              "REQ_END_TIME",
+              "INS_CODE_NAME",
+            ].includes(v.key),
+        );
+
+        setGrid1Header(headers);
       } else {
         setGrid1Header([...GRID1_HEADER]);
       }
@@ -312,7 +340,9 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
                 ? "A"
                 : selectTab === 2
                   ? "Q"
-                  : "SUM");
+                  : selectTab === 4
+                    ? "SUM"
+                    : "");
 
         if (!finalDeptCode) {
           sendErr("부서를 선택해주세요");
@@ -851,18 +881,23 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
           tabs={FILTER_TAB}
           active={selectTab}
           setActive={(v) => {
+            var tmp = "";
+            if (v === 0) {
+              tmp = "J";
+            } else if (v === 1) {
+              tmp = "I";
+            } else if (v === 3) {
+              tmp = "A";
+            } else if (v === 2) {
+              tmp = "Q";
+            } else if (v === 4) {
+              tmp = "SUM";
+            } else if (v === 5) {
+              tmp = "";
+            }
             setSelectTab(v);
             searchClick({
-              approveFlag:
-                v === 0
-                  ? "J"
-                  : v === 1
-                    ? "I"
-                    : v === 3
-                      ? "A"
-                      : v === 2
-                        ? "Q"
-                        : "SUM",
+              approveFlag: tmp,
             });
           }}>
           <CommonContainer
@@ -1037,6 +1072,14 @@ const WorkTimeAdm = forwardRef<PageHandle, DefInfraComp>(
             <TableCust2
               body={grid1}
               header={GRID1_HEADER_1}
+              height="30rem"
+              width="100%"
+            />
+          </CommonContainer>
+          <CommonContainer title="CAPS 리스트">
+            <TableCust2
+              body={grid1}
+              header={grid1Header}
               height="30rem"
               width="100%"
             />
