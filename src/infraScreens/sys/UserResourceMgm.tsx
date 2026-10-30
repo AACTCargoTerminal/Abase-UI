@@ -161,6 +161,79 @@ export default function UserResourceMgm({
   );
 
   const saveClick = useCallback(async () => {
+    const retirementInput = hrwdtSelect["B"];
+
+    // 조회된 목록에서 기존 퇴사 정보를 가져옴
+    const existingRetirement = grid1.find(
+      (row) =>
+        row["CLASS_CODE"] === "HRWDT" &&
+        row["CODE_CODE"] === "B" &&
+        String(row["YYYY"] || "0000") ===
+        String(retirementInput?.["YYYY"] || "0000")
+    );
+
+    // 퇴사 항목을 입력한 경우에만 저장할 값을 구성
+    const retirementToSave: TableRow | undefined = retirementInput
+      ? {
+        ...existingRetirement,
+        ...retirementInput,
+
+        // 퇴사일을 입력하지 않았다면 기존 퇴사일 유지
+        VALUE1:
+          retirementInput["VALUE1"] ||
+          existingRetirement?.["VALUE1"] ||
+          "",
+
+        VALUE2: retirementInput["VALUE2"] || "",
+      }
+      : undefined;
+
+    if (retirementToSave) {
+      // 적용일을 직접 입력하지 않았다면 기본값 설정
+      if (!retirementToSave["VALUE2"]) {
+        if (retirementInput?.["VALUE1"]) {
+          // 퇴사일을 새로 입력한 경우: 해당 날짜 +3일
+          retirementToSave["VALUE2"] =
+            isValidDate(retirementToSave["VALUE1"])
+              ? dayjs(retirementToSave["VALUE1"])
+                .add(3, "day")
+                .format("YYYYMMDD")
+              : "";
+        } else {
+          // 기존 적용일을 유지하고, 없으면 기존 퇴사일 +3일
+          retirementToSave["VALUE2"] =
+            existingRetirement?.["VALUE2"] ||
+            (isValidDate(retirementToSave["VALUE1"])
+              ? dayjs(retirementToSave["VALUE1"])
+                .add(3, "day")
+                .format("YYYYMMDD")
+              : "");
+        }
+      }
+
+      const retireDate = retirementToSave["VALUE1"];
+      const effectiveDate = retirementToSave["VALUE2"];
+
+      if (retireDate && !isValidDate(retireDate)) {
+        sendErr("퇴사일을 올바르게 입력해주세요.");
+        return;
+      }
+
+      if (effectiveDate && !isValidDate(effectiveDate)) {
+        sendErr("퇴사 적용일을 올바르게 입력해주세요.");
+        return;
+      }
+
+      if (
+        retireDate &&
+        effectiveDate &&
+        dayjs(effectiveDate).isBefore(dayjs(retireDate), "day")
+      ) {
+        sendErr("퇴사 적용일은 퇴사일보다 빠를 수 없습니다.");
+        return;
+      }
+    }
+
     const map = new Map<string, any>();
     const tableTmp: TableRow[] = [];
     if (hrcosSelect?.["CODE_CODE"] && hrcosSelect?.["VALUE1"]) {
@@ -187,19 +260,26 @@ export default function UserResourceMgm({
     }
 
     Object.keys(hrwdtSelect).forEach((v) => {
-      if (hrwdtSelect?.[v]) {
-        if (isValidDate(hrwdtSelect?.[v]?.["VALUE1"])) {
-          tableTmp.push({
-            CLASS_CODE: "HRWDT",
-            CODE_CODE: v,
-            USER_SID: userSid,
-            YYYY: hrwdtSelect?.[v]?.["YYYY"] || "0000",
-            VALUE1: hrwdtSelect?.[v]?.["VALUE1"],
-            VALUE2: hrwdtSelect?.[v]?.["VALUE2"],
-            VALUE3: hrwdtSelect?.[v]?.["VALUE3"],
-            VALUE4: hrwdtSelect?.[v]?.["VALUE4"],
-          });
-        }
+      const row =
+        v === "B" ? retirementToSave : hrwdtSelect[v];
+
+      if (!row) return;
+
+      const canSave =
+        isValidDate(row["VALUE1"]) ||
+        (v === "B" && isValidDate(row["VALUE2"]));
+
+      if (canSave) {
+        tableTmp.push({
+          CLASS_CODE: "HRWDT",
+          CODE_CODE: v,
+          USER_SID: userSid,
+          YYYY: row["YYYY"] || "0000",
+          VALUE1: row["VALUE1"] || "",
+          VALUE2: row["VALUE2"] || "",
+          VALUE3: row["VALUE3"],
+          VALUE4: row["VALUE4"],
+        });
       }
     });
     Object.keys(hrdtsSelect).forEach((v) => {
@@ -301,6 +381,7 @@ export default function UserResourceMgm({
     hrpatSelect,
     trmcdSelect,
     hrtauSelect,
+    grid1,
   ]);
 
   async function getClass(classCode: string) {
@@ -457,22 +538,55 @@ export default function UserResourceMgm({
               </div>
             );
           } else {
+            const isRetirement = v["CODE_CODE"] === "B";
+
             let css = 1;
-            if (v["VALUE3_CHAR"] === "Y") css++;
-            else if (v["VALUE4_CHAR"] === "Y") css++;
+
+            if (isRetirement) {
+              // 퇴사일(VALUE1), 퇴사 적용일(VALUE2)
+              css = 2;
+            } else if (v["VALUE3_CHAR"] === "Y") {
+              css++;
+            } else if (v["VALUE4_CHAR"] === "Y") {
+              css++;
+            }
 
             return Array.from({ length: css }).map((_, i) => (
               <div className="mainInput" key={`${v["CODE_CODE"]}-${i}`}>
                 <DateInput
                   id={`hrwdt${v["CODE_CODE"]}${i}`}
                   onChange={(s) => {
-                    setHrwdtSelect((prev) => ({
-                      ...prev,
-                      [v["CODE_CODE"]]: { [`VALUE${i + 1}`]: s },
-                    }));
+                    setHrwdtSelect((prev) => {
+                      const code = v["CODE_CODE"];
+
+                      const nextRow = {
+                        ...prev[code],
+                        [`VALUE${i + 1}`]: s,
+                      };
+
+                      // 퇴사일을 변경하면 적용일을 퇴사일 +3일로 설정
+                      if (isRetirement && i === 0) {
+                        nextRow["VALUE2"] = isValidDate(s)
+                          ? dayjs(s).add(3, "day").format("YYYYMMDD")
+                          : "";
+                      }
+
+                      return {
+                        ...prev,
+                        [code]: nextRow,
+                      };
+                    });
                   }}
-                  label={i === 0 ? v["CODE_NAME"] : undefined}
-                  value={hrwdtSelect[v["CODE_CODE"]]?.[`VALUE${i + 1}`]}
+                  label={
+                    i === 0
+                      ? v["CODE_NAME"]
+                      : isRetirement
+                        ? "퇴사 적용일"
+                        : undefined
+                  }
+                  value={
+                    hrwdtSelect[v["CODE_CODE"]]?.[`VALUE${i + 1}`] || ""
+                  }
                   labelW="33.5%"
                 />
               </div>
