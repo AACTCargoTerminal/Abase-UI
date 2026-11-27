@@ -10,6 +10,7 @@ import type {
   DefInfraComp,
   MenuBtnDataType,
   PageHandle,
+  RowPrepType,
   TableHandle,
   TableHeaderType,
   TableRow,
@@ -40,13 +41,15 @@ import moment from "moment";
 
 dayjs.locale("ko");
 
-const TABS = ["요청", "전체 리스트", "검토 리스트", "스케줄"];
+const TABS = ["요청", "전체 리스트", "검토 리스트", "스케줄", "심야교통비"];
 const BTN_ARRAY: MenuBtnDataType[] = [
   { KEY: "A", VALUE: "스케줄( 예정 )" },
   { KEY: "B", VALUE: "스케줄( 확정 )" },
   { KEY: "C", VALUE: "시간외근무 신청서 ( 일별 )" },
   { KEY: "F", VALUE: "시간외근무 신청서 ( 월별 )" },
   { KEY: "D", VALUE: "시간외근무 세부내역" },
+  { KEY: "E", VALUE: "심야교통비 신청서 ( 월별 )" },
+  { KEY: "G", VALUE: "심야교통비 세부내역" },
 ];
 
 type ReqHandle = {
@@ -93,6 +96,7 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
     const apprRef = useRef<ReqHandle>(null);
     const schRef = useRef<ReqHandle>(null);
     const schFlag = useRef<boolean>(false);
+    const nightRef = useRef<ReqHandle>(null);
 
     useImperativeHandle(ref, () => ({
       onModalPayload(payload: TableRow) {
@@ -134,6 +138,8 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
           apprRef.current?.search({ userNameP: tmpUserName });
         } else if (tmpTabSelect === 3) {
           schRef.current?.search({ userNameP: tmpUserName });
+        } else if (tmpTabSelect === 4) {
+          nightRef.current?.search({ userNameP: tmpUserName });
         }
       },
       [
@@ -274,6 +280,106 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
       [hrpatSelect, trmcdSelect, startDate, endDate, userName, dateChk, date],
     );
 
+    const getNightInsExcel = useCallback(async () => {
+      if (dateChk) {
+        sendErr("해당 출력은 월설정 체크 후 가능합니다.");
+        return;
+      }
+
+      const ret = await getApi<string>({
+        baseUrl: "INFRA",
+        method: "GET",
+        url: `/work/getNightWorkIns?dateStr=${date}`,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+
+      if (ret.ok) {
+        if (ret.data) {
+          const base64 = ret.data;
+
+          const byteCharacters = atob(base64);
+
+          const byteNumbers = new Array(byteCharacters.length);
+
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+
+          const blob = new Blob([byteArray], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+
+          const a = document.createElement("a");
+
+          a.href = url;
+          a.download = `${dayjs().format("YYYY_MM_DD")}심야교통비 신청서(월별).pdf`;
+
+          document.body.appendChild(a);
+
+          a.click();
+
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }, [dateChk, date]);
+
+    const getNightDetailExcel = useCallback(async () => {
+      if (dateChk) {
+        sendErr("해당 출력은 월설정 체크 후 가능합니다.");
+        return;
+      }
+
+      const ret = await getApi<string>({
+        baseUrl: "INFRA",
+        method: "GET",
+        url: `/work/getNightDetail?dateStr=${date}`,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+
+      if (ret.ok) {
+        if (ret.data) {
+          const base64 = ret.data;
+
+          const byteCharacters = atob(base64);
+
+          const byteNumbers = new Array(byteCharacters.length);
+
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+
+          const blob = new Blob([byteArray], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+
+          const a = document.createElement("a");
+
+          a.href = url;
+          a.download = `${dayjs().format("YYYY_MM_DD")}심야교통비 세부내역(월별).xlsx`;
+
+          document.body.appendChild(a);
+
+          a.click();
+
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }, [dateChk, date]);
+
     const getDetailExcel = useCallback(async () => {
       const ret = await getApi<string>({
         baseUrl: "INFRA",
@@ -401,6 +507,10 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
                     getDetailExcel();
                   } else if (v === "F") {
                     getTimeExcel("MON");
+                  } else if (v === "E") {
+                    getNightInsExcel();
+                  } else if (v === "G") {
+                    getNightDetailExcel();
                   }
                 }}
               />
@@ -523,6 +633,26 @@ const WorkHrMgm = forwardRef<PageHandle, DefInfraComp>(
               setUserName(r?.["USER_NAME"] || "");
               setStartDate(r?.["DATE"] ?? "");
               setEndDate(r?.["DATE"] ?? "");
+              setDateChk(true);
+              schFlag.current = true;
+              setTabSelect(1);
+            }}
+          />
+          <NightList
+            hrreq={hrreq}
+            pgmId={pgmId}
+            ref={nightRef}
+            deptCode={hrpatSelect}
+            fromDate={endDate}
+            terminalCode={trmcdSelect}
+            toDate={startDate}
+            userName={userName}
+            date={date}
+            dateFlag={dateChk}
+            onClick={(r) => {
+              setUserName(r?.["USER_NAME"] || "");
+              setStartDate(String(r?.["SCH_DATE"] ?? "").replaceAll("-", ""));
+              setEndDate(String(r?.["SCH_DATE"] ?? "").replaceAll("-", ""));
               setDateChk(true);
               schFlag.current = true;
               setTabSelect(1);
@@ -2311,6 +2441,311 @@ const SchList = forwardRef<ReqHandle, SetProp>(
             </div>
           </div>
         </div>
+      </div>
+    );
+  },
+);
+
+const NIGHT_GRID1_HEADER: TableHeaderType[] = [
+  { key: "CHK", value: "", w: "3rem" },
+  { key: "SCH_DATE", value: "날짜", w: "6rem" },
+  { key: "SEQ", value: "순번", w: "3rem" },
+  {
+    key: "USER_NAME",
+    value: "이름",
+    w: "5rem",
+    sum: 0,
+  },
+  { key: "SCH_NAME", value: "스케줄", w: "7rem" },
+  { key: "REQ_TIME", value: "시간외근무", w: "7rem" },
+  { key: "CAPS_TIME", value: "캡스정보", w: "7rem" },
+  { key: "REGION_NAME", value: "지역", w: "10rem" },
+  { key: "DETAIL_REGION", value: "세부지역", w: "6rem" },
+  {
+    key: "AMOUNT",
+    value: "금액(천원)",
+    w: "4.5rem",
+    type: "NUM",
+    sum: 0,
+    typeOption: { USABLE_FLAG: "Y" },
+  },
+  {
+    key: "HOLIDAY_FLAG",
+    value: "휴일근무",
+    w: "4rem",
+    sum: 0,
+    typeOption: { HOLIDAY_FLAG: "Y", USABLE_FLAG: "Y" },
+  },
+  {
+    key: "CER_FLAG",
+    value: "등본여부",
+    w: "4rem",
+  },
+  {
+    key: "USABLE_FLAG",
+    value: "사용유무",
+    w: "4rem",
+    sum: 0,
+    typeOption: { USABLE_FLAG: "Y" },
+  },
+  {
+    key: "APPROVE_FLAG",
+    value: "검토여부",
+    w: "4rem",
+    sum: 0,
+    typeOption: { APPROVE_FLAG: "Y" },
+  },
+];
+
+const NightList = forwardRef<ReqHandle, SetProp>(
+  (
+    {
+      hrreq,
+      pgmId,
+      deptCode,
+      fromDate,
+      terminalCode,
+      toDate,
+      userName,
+      date,
+      dateFlag,
+      onClick,
+    },
+    ref,
+  ) => {
+    useImperativeHandle(ref, () => ({
+      search({ userNameP }) {
+        searchClick(userNameP);
+      },
+    }));
+
+    const [filterSelect, setFilterSelct] = useState("");
+    const [grid1, setGrid1] = useState<TableRow[]>([]);
+    const grid1Ref = useRef<TableHandle>(null);
+    const searchClick = useCallback(
+      async (name: string) => {
+        const params = new URLSearchParams({
+          monFlag: dateFlag ? "Y" : "N",
+          startDate: dateFlag ? toDate : date,
+          endDate: dateFlag ? fromDate : "",
+          teamCode: deptCode,
+          terminalCode: terminalCode,
+          userName: name,
+          filter: filterSelect,
+        });
+
+        sendLoading(true);
+        const res = await getApi<Record<number, TableRow[]>>({
+          baseUrl: "INFRA",
+          method: "GET",
+          url: `/work/getWorkL010_033?${params.toString()}`,
+          pgmId: pgmId,
+          sucFlag: true,
+        });
+        sendLoading(false);
+        if (res.ok) {
+          if (res?.data?.[0]) {
+            setGrid1(res?.data?.[0]);
+            return;
+          }
+        }
+        setGrid1([]);
+      },
+      [dateFlag, fromDate, toDate, deptCode, terminalCode, filterSelect, pgmId],
+    );
+
+    const approveClick = useCallback(async () => {
+      const tmpObj = grid1Ref.current?.getChk() || {};
+      if (Object.keys(tmpObj).length === 0) {
+        sendErr("항목을 선택해주세요");
+        return;
+      }
+
+      const array = Object.values(tmpObj)
+        .filter((v) => v?.["USABLE_FLAG"] === "Y")
+        .map((v) => ({
+          year: v?.["YEAR"] || "",
+          mon: v?.["MON"] || "",
+          day: v?.["DAY"] || "",
+          seq: v?.["SEQ"] !== undefined ? v?.["SEQ"] : 0,
+          userSid: v?.["USER_SID"] || 0,
+        }));
+
+      const map = new Map();
+      map.set("array", array);
+      map.set("type", "B");
+      sendLoading(true);
+      const res = await getApi<Record<number, TableRow[]>>({
+        baseUrl: "INFRA",
+        method: "POST",
+        url: `/work/setWorkM010_017`,
+        pgmId: pgmId,
+        params: map,
+        sucFlag: true,
+      });
+      sendLoading(false);
+
+      if (res.ok) {
+        await searchClick(userName);
+      }
+    }, [grid1Ref, userName]);
+
+    const cancelClick = useCallback(async () => {
+      const tmpObj = grid1Ref.current?.getChk() || {};
+      if (Object.keys(tmpObj).length === 0) {
+        sendErr("항목을 선택해주세요");
+        return;
+      }
+
+      const array = Object.values(tmpObj)
+        .filter((v) => v?.["USABLE_FLAG"] === "Y")
+        .map((v) => ({
+          year: v?.["YEAR"] || "",
+          mon: v?.["MON"] || "",
+          day: v?.["DAY"] || "",
+          seq: v?.["SEQ"] !== undefined ? v?.["SEQ"] : 0,
+          userSid: v?.["USER_SID"] || 0,
+        }));
+
+      const map = new Map();
+      map.set("array", array);
+      map.set("type", "B");
+      sendLoading(true);
+      const res = await getApi<Record<number, TableRow[]>>({
+        baseUrl: "INFRA",
+        method: "POST",
+        url: `/work/setWorkM010_026`,
+        pgmId: pgmId,
+        params: map,
+        sucFlag: true,
+      });
+      sendLoading(false);
+
+      if (res.ok) {
+        await searchClick(userName);
+      }
+    }, [grid1Ref, userName]);
+
+    const holdDocClick = useCallback(
+      async ({ r, type }: { r: TableRow; type: string }) => {
+        const map = new Map();
+        map.set("year", r?.["YEAR"] || "");
+        map.set("mon", r?.["MON"] || "");
+        map.set("day", r?.["DAY"] || "");
+        map.set("seq", r?.["SEQ"] || "0");
+        map.set("userSid", r?.["USER_SID"] || "0");
+        map.set("imgType", type);
+        sendLoading(true);
+        const ret = await getApi<TableRow[]>({
+          baseUrl: "INFRA",
+          method: "POST",
+          url: `/work/setWorkM010_042`,
+          pgmId: pgmId,
+          sucFlag: true,
+          params: map,
+        });
+        sendLoading(false);
+        if (ret.ok) {
+          if (ret.data) {
+            const tmpArray = ret.data.map((v) => ({
+              type: v?.["mime"] === "application/pdf" ? "PDF" : "IMG",
+              data: base64ToPdfUrl(v?.["data"], v?.["mime"]),
+              subject: v?.["remark"] || "",
+            }));
+
+            openModal({
+              array: [
+                {
+                  id: "MSITP010",
+                  name: "Print",
+                  param: {
+                    files: tmpArray,
+                  },
+                },
+              ],
+            });
+          }
+        }
+      },
+      [],
+    );
+
+    return (
+      <div className="flex flex-col gap-2">
+        <CommonContainer
+          title="심야교통비 목록"
+          childrenTitle={
+            <div className="grid grid-cols-[0.9fr_0.4fr_0.4fr] items-center gap-2 px-[1%]">
+              <div className="mainInput">
+                <CommonDropDown
+                  onClick={(v) => {
+                    setFilterSelct(v?.["CODE_CODE"] || "");
+                  }}
+                  inputKey={{
+                    key: "CODE_CODE",
+                    showKey: "0",
+                    value: filterSelect,
+                  }}
+                  id="filter"
+                  dropHeight="10rem"
+                  header={commonHeader2}
+                  data={[
+                    { CODE_CODE: "", CODE_NAME: "-" },
+                    { CODE_CODE: "A", CODE_NAME: "확정" },
+                    { CODE_CODE: "B", CODE_NAME: "검토완료" },
+                  ]}
+                  title="필터"
+                  labelW="30%"
+                />
+              </div>
+              <div className="mainInput">
+                <Btn
+                  txt="검토완료"
+                  type="SAVE"
+                  onClick={() => {
+                    approveClick();
+                  }}
+                />
+              </div>
+              <div className="mainInput">
+                <Btn
+                  txt="검토취소"
+                  type="DELETE"
+                  onClick={() => {
+                    cancelClick();
+                  }}
+                />
+              </div>
+            </div>
+          }>
+          <TableCust2
+            body={grid1}
+            header={NIGHT_GRID1_HEADER}
+            height="35rem"
+            width="100%"
+            batch={true}
+            doubleClick={(v) => {
+              onClick?.(v);
+            }}
+            rightMenu={[{ key: "HOLD_DOC", value: "등본확인" }]}
+            rightClick={(k, r) => {
+              if (k === "HOLD_DOC" && r !== undefined) {
+                holdDocClick({ r: r, type: "NGCER" });
+              }
+            }}
+            ref={grid1Ref}
+            onRowPrepared={(r, i) => {
+              var tmp: RowPrepType = {};
+              if (r?.["USABLE_FLAG"] === "N") {
+                tmp = { lines: "bg-[#F47378]" };
+              }
+              if (r?.["APPROVE_FLAG"] === "Y") {
+                tmp = { lines: "bg-[#C8EFD4]" };
+              }
+              return tmp;
+            }}
+          />
+        </CommonContainer>
       </div>
     );
   },

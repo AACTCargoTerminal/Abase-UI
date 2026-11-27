@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type SyntheticEvent,
+} from "react";
 import Redirect from "../../screens/common/Redirect";
 import {
   type TableHandle,
@@ -7,14 +14,35 @@ import {
   type TableRow,
   type ToggleType,
 } from "../../Util/Type";
-import { getApi, getInt, isValidDate, sendErr } from "../../Util/Util";
+import {
+  base64ToFile,
+  getApi,
+  getInt,
+  isValidDate,
+  sendErr,
+  sendLoading,
+} from "../../Util/Util";
 import { CommonContainer } from "../../comp/Container";
 import { TableCust2 } from "../../comp/Table";
 import { commonHeader2 } from "../../Util/Header";
 import { CommonDatePicker, CommonDropDown } from "../../comp/DropDown";
-import { CommonInput, CommonLabel, DateInput } from "../../comp/Input";
+import {
+  CommonInput,
+  CommonLabel,
+  DateInput,
+  PhoneInput,
+} from "../../comp/Input";
 import { ToggleBtn } from "../../comp/Common";
 import dayjs from "dayjs";
+
+import ReactCrop, {
+  type Crop,
+  type PixelCrop,
+  centerCrop,
+  makeAspectCrop,
+} from "react-image-crop";
+
+import "react-image-crop/dist/ReactCrop.css";
 
 const GRID1_HEADER: TableHeaderType[] = [
   { key: "CHK", value: "", w: "3rem" },
@@ -43,12 +71,19 @@ const YESNO: ToggleType[] = [
   { key: "N", value: "아니오" },
 ];
 
+type Props = {
+  file: File;
+  onSave: (file: File) => void;
+  onCancel: () => void;
+};
+
 export default function UserResourceMgm({
   param,
   onClose,
   pgmId,
   headerAction,
   outParam,
+  closeParam,
 }: ModalComp) {
   const [userSid, setUserSid] = useState(0);
   if (!param["userSid"]) {
@@ -64,6 +99,7 @@ export default function UserResourceMgm({
   useEffect(() => {
     if (userSid > 0) {
       searchClick();
+      fileSearch();
     }
   }, [userSid]);
 
@@ -83,9 +119,26 @@ export default function UserResourceMgm({
   const [trmcdSelect, setTrmcdSelect] = useState("");
   const [hrtauSelect, setHrtauSelect] = useState<TableRow>({});
   const [yesNo, setYesNo] = useState(0);
+  const [hrorgSelect, setHrorgSelect] = useState<TableRow>({});
   const yesNoRef = useRef<boolean>(false);
 
   const grid1Ref = useRef<TableHandle | null>(null);
+  const [fileSelect, setFileSelect] = useState<File | null>(null);
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+  const [fileFlag, setFileFlag] = useState(false);
+
+  useEffect(() => {
+    if (!fileSelect) {
+      setImageUrl("");
+      return;
+    }
+
+    const url = URL.createObjectURL(fileSelect);
+    setImageUrl(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [fileSelect]);
 
   useEffect(() => {
     getClass("HRCOS");
@@ -98,6 +151,7 @@ export default function UserResourceMgm({
     getClass("HRTAU");
     getClass("POSTN");
     getClass("HRMTR");
+    getClass("HRORG");
   }, []);
 
   useEffect(() => {
@@ -115,6 +169,7 @@ export default function UserResourceMgm({
     });
     setTrmcdSelect("");
     setHrtauSelect({});
+    setHrorgSelect({});
   }
 
   useEffect(() => {
@@ -136,6 +191,9 @@ export default function UserResourceMgm({
       } else {
         sendErr("항목을 선택해주세요.");
       }
+    }
+    if (headerAction?.type === "사진저장") {
+      fileSave();
     }
   }, [headerAction?.type]);
 
@@ -169,23 +227,21 @@ export default function UserResourceMgm({
         row["CLASS_CODE"] === "HRWDT" &&
         row["CODE_CODE"] === "B" &&
         String(row["YYYY"] || "0000") ===
-        String(retirementInput?.["YYYY"] || "0000")
+          String(retirementInput?.["YYYY"] || "0000"),
     );
 
     // 퇴사 항목을 입력한 경우에만 저장할 값을 구성
     const retirementToSave: TableRow | undefined = retirementInput
       ? {
-        ...existingRetirement,
-        ...retirementInput,
+          ...existingRetirement,
+          ...retirementInput,
 
-        // 퇴사일을 입력하지 않았다면 기존 퇴사일 유지
-        VALUE1:
-          retirementInput["VALUE1"] ||
-          existingRetirement?.["VALUE1"] ||
-          "",
+          // 퇴사일을 입력하지 않았다면 기존 퇴사일 유지
+          VALUE1:
+            retirementInput["VALUE1"] || existingRetirement?.["VALUE1"] || "",
 
-        VALUE2: retirementInput["VALUE2"] || "",
-      }
+          VALUE2: retirementInput["VALUE2"] || "",
+        }
       : undefined;
 
     if (retirementToSave) {
@@ -193,20 +249,17 @@ export default function UserResourceMgm({
       if (!retirementToSave["VALUE2"]) {
         if (retirementInput?.["VALUE1"]) {
           // 퇴사일을 새로 입력한 경우: 해당 날짜 +3일
-          retirementToSave["VALUE2"] =
-            isValidDate(retirementToSave["VALUE1"])
-              ? dayjs(retirementToSave["VALUE1"])
-                .add(3, "day")
-                .format("YYYYMMDD")
-              : "";
+          retirementToSave["VALUE2"] = isValidDate(retirementToSave["VALUE1"])
+            ? dayjs(retirementToSave["VALUE1"]).add(3, "day").format("YYYYMMDD")
+            : "";
         } else {
           // 기존 적용일을 유지하고, 없으면 기존 퇴사일 +3일
           retirementToSave["VALUE2"] =
             existingRetirement?.["VALUE2"] ||
             (isValidDate(retirementToSave["VALUE1"])
               ? dayjs(retirementToSave["VALUE1"])
-                .add(3, "day")
-                .format("YYYYMMDD")
+                  .add(3, "day")
+                  .format("YYYYMMDD")
               : "");
         }
       }
@@ -260,14 +313,12 @@ export default function UserResourceMgm({
     }
 
     Object.keys(hrwdtSelect).forEach((v) => {
-      const row =
-        v === "B" ? retirementToSave : hrwdtSelect[v];
+      const row = v === "B" ? retirementToSave : hrwdtSelect[v];
 
       if (!row) return;
 
       const canSave =
-        isValidDate(row["VALUE1"]) ||
-        (v === "B" && isValidDate(row["VALUE2"]));
+        isValidDate(row["VALUE1"]) || (v === "B" && isValidDate(row["VALUE2"]));
 
       if (canSave) {
         tableTmp.push({
@@ -350,13 +401,28 @@ export default function UserResourceMgm({
         VALUE4: "",
       });
     }
+    if (Object.keys(hrorgSelect).length > 0 && hrorgSelect?.["CODE_CODE"]) {
+      if (!hrorgSelect?.["VALUE1"] || !hrorgSelect?.["VALUE2"]) {
+        sendErr("핸드폰, 내선번호는 직급설정시 필수 입력입니다.");
+        return;
+      }
 
-    map.set("SAVE", tableTmp);
-
+      tableTmp.push({
+        CLASS_CODE: "HRORG",
+        YYYY: "0000",
+        CODE_CODE: hrorgSelect?.["CODE_CODE"] || "",
+        USER_SID: userSid,
+        VALUE1: hrorgSelect?.["VALUE1"] || "",
+        VALUE2: hrorgSelect?.["VALUE2"] || "",
+        VALUE3: "",
+        VALUE4: "",
+      });
+    }
     if (tableTmp.length === 0) {
       sendErr("저장할 항목이 없습니다.");
       return;
     }
+    map.set("codeArray", tableTmp);
 
     const res = await getApi<Record<number, TableRow[]>>({
       baseUrl: "AUTH",
@@ -370,7 +436,7 @@ export default function UserResourceMgm({
     if (res.ok) {
       clear();
       searchClick();
-      outParam?.({ SEARCH: "SEARCH" });
+      closeParam?.({ CLOSE: "CLOSE" });
     }
   }, [
     hrcosSelect,
@@ -382,6 +448,7 @@ export default function UserResourceMgm({
     trmcdSelect,
     hrtauSelect,
     grid1,
+    hrorgSelect,
   ]);
 
   async function getClass(classCode: string) {
@@ -430,6 +497,69 @@ export default function UserResourceMgm({
     }
   }, [userSid, yesNo]);
 
+  const fileClick = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("이미지 파일만 선택 가능합니다.");
+      return;
+    }
+
+    // 바로 저장하지 않고 편집기 실행
+    setEditFile(file);
+  }, []);
+
+  const fileSearch = useCallback(async () => {
+    sendLoading(true);
+    const res = await getApi<TableRow[]>({
+      baseUrl: "AUTH",
+      method: "GET",
+      url: `/user/getUserM010_004?userSid=${userSid}&type=A`,
+      pgmId: pgmId,
+      sucFlag: true,
+    });
+    sendLoading(false);
+
+    if (res.ok) {
+      const tmp = res.data?.[0];
+      if (tmp) {
+        const fileTmp = base64ToFile(
+          tmp?.["DATA"],
+          tmp?.["FILE_NAME"],
+          tmp?.["MIME"],
+        );
+        setFileSelect(fileTmp);
+      }
+    }
+  }, [userSid]);
+
+  const fileSave = useCallback(async () => {
+    if (!fileFlag) {
+      sendErr("저장할 파일이 없습니다.");
+      return;
+    }
+
+    const map = new Map();
+    map.set("userSid", userSid);
+    map.set("type", "A");
+    sendLoading(true);
+    const res = await getApi<Record<number, TableRow[]>>({
+      baseUrl: "AUTH",
+      method: "POST",
+      url: `/user/setUserM010_014`,
+      params: map,
+      files: fileSelect ? [fileSelect] : [],
+      pgmId: pgmId,
+      sucFlag: true,
+    });
+    sendLoading(false);
+    if (res.ok) {
+      await fileSearch();
+    }
+  }, [fileFlag, fileSelect, userSid]);
   return (
     <div className="flex flex-col">
       <div className="grid grid-cols-4 py-[3%] px-[2%] gap-3">
@@ -584,16 +714,14 @@ export default function UserResourceMgm({
                         ? "퇴사 적용일"
                         : undefined
                   }
-                  value={
-                    hrwdtSelect[v["CODE_CODE"]]?.[`VALUE${i + 1}`] || ""
-                  }
+                  value={hrwdtSelect[v["CODE_CODE"]]?.[`VALUE${i + 1}`] || ""}
                   labelW="33.5%"
                 />
               </div>
             ));
           }
         })}
-        {(classCode?.["HRDTS"] ?? []).map((v) => {
+        {/* {(classCode?.["HRDTS"] ?? []).map((v) => {
           let css = 1;
           if (v["VALUE3_CHAR"] === "Y") css++;
           return (
@@ -644,7 +772,7 @@ export default function UserResourceMgm({
               ))}
             </div>
           );
-        })}
+        })} */}
         <div className="mainInput col-span-2 grid grid-cols-[0.6fr_0.35fr] gap-3">
           {" "}
           <CommonDropDown
@@ -761,7 +889,92 @@ export default function UserResourceMgm({
             }}
           />
         </div>
+        <div className="mainInput">
+          <CommonDropDown
+            id="hrogr"
+            data={classCode?.["HRORG"] || []}
+            dropHeight="10rem"
+            header={commonHeader2}
+            inputKey={{
+              key: "CODE_CODE",
+              showKey: "0",
+              value: hrorgSelect?.["CODE_CODE"] || "",
+            }}
+            onClick={(r) => {
+              setHrorgSelect((prev) => ({
+                ...prev,
+                CODE_CODE: r?.["CODE_CODE"] || "",
+              }));
+            }}
+            title="직급"
+            find={true}
+          />
+        </div>
+        <div className="mainInput">
+          <PhoneInput
+            id="phone"
+            value={hrorgSelect?.["VALUE1"] || ""}
+            label="핸드폰"
+            labelW="25%"
+            holder="010-1234-1234"
+            onChange={(v) =>
+              setHrorgSelect((prev) => ({ ...prev, ["VALUE1"]: v }))
+            }
+          />
+        </div>
+        <div className="mainInput">
+          <PhoneInput
+            id="mobile"
+            value={hrorgSelect?.["VALUE2"] || ""}
+            label="내선번호"
+            labelW="30%"
+            holder="744-1234"
+            onChange={(v) =>
+              setHrorgSelect((prev) => ({ ...prev, ["VALUE2"]: v }))
+            }
+          />
+        </div>
+        <div className="row-span-3 flex gap-3">
+          <CommonLabel id="fileName" label="사진" />
+          <div
+            onClick={(event) => {
+              event.stopPropagation();
+              document.getElementById("resourcefile")?.click();
+            }}
+            className="flex w-[100px] aspect-[3/4] cursor-pointer
+               items-center justify-center overflow-hidden
+               rounded-md border border-gray-300">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt="사진"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div>파일 없음</div>
+            )}
+          </div>
+          <input
+            id="resourcefile"
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={fileClick}
+          />
+          {editFile && (
+            <ImageCropEditor
+              file={editFile}
+              onSave={(resultFile) => {
+                setFileFlag(true);
+                setFileSelect(resultFile);
+                setEditFile(null);
+              }}
+              onCancel={() => setEditFile(null)}
+            />
+          )}
+        </div>
       </div>
+
       <div>
         <TableCust2
           body={grid1}
@@ -852,12 +1065,250 @@ export default function UserResourceMgm({
             } else if (tmp === "HRTAU") {
               clear();
               setHrtauSelect(r);
+            } else if (tmp === "HRORG") {
+              clear();
+              setHrorgSelect(r);
             } else {
               clear();
             }
             return false;
           }}
         />
+      </div>
+    </div>
+  );
+}
+
+const cropImage = async (
+  image: HTMLImageElement,
+  area: PixelCrop,
+  fileName: string,
+): Promise<File> => {
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
+
+  const sx = area.x * scaleX;
+  const sy = area.y * scaleY;
+  const sw = area.width * scaleX;
+  const sh = area.height * scaleY;
+
+  if (sw <= 0 || sh <= 0) {
+    throw new Error("잘못된 자르기 영역");
+  }
+
+  const canvas = document.createElement("canvas");
+
+  // 선택 영역의 원본 해상도를 유지
+  canvas.width = Math.max(1, Math.round(sw));
+  canvas.height = Math.max(1, Math.round(sh));
+
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    throw new Error("Canvas 생성 실패");
+  }
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((result) => {
+      if (result) resolve(result);
+      else reject(new Error("이미지 변환 실패"));
+    }, "image/png");
+  });
+
+  return new File([blob], fileName.replace(/\.[^.]+$/, "") + ".png", {
+    type: "image/png",
+  });
+};
+
+function ImageCropEditor({ file, onSave, onCancel }: Props) {
+  const [imageUrl, setImageUrl] = useState("");
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // true: 3:4 고정, false: 자유롭게 조절
+  const [fixedRatio, setFixedRatio] = useState(false);
+
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setImageUrl(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  // 이미지 최초 로딩 시 자르기 영역 설정
+  const onImageLoad = (event: SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = event.currentTarget;
+
+    if (fixedRatio) {
+      const initialCrop = centerCrop(
+        makeAspectCrop(
+          {
+            unit: "%",
+            width: 70,
+          },
+          3 / 4,
+          width,
+          height,
+        ),
+        width,
+        height,
+      );
+
+      setCrop(initialCrop);
+    } else {
+      setCrop({
+        unit: "%",
+        x: 15,
+        y: 15,
+        width: 70,
+        height: 70,
+      });
+    }
+  };
+
+  const handleRatioChange = (checked: boolean) => {
+    setFixedRatio(checked);
+    setCompletedCrop(null);
+
+    const img = imgRef.current;
+    if (!img) return;
+
+    const { width, height } = img;
+
+    if (checked) {
+      setCrop(
+        centerCrop(
+          makeAspectCrop({ unit: "%", width: 70 }, 3 / 4, width, height),
+          width,
+          height,
+        ),
+      );
+    } else {
+      setCrop({
+        unit: "%",
+        x: 15,
+        y: 15,
+        width: 70,
+        height: 70,
+      });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!imgRef.current || !crop || saving) return;
+
+    try {
+      setSaving(true);
+
+      // 현재 선택 영역을 화면 픽셀 단위로 계산
+      const img = imgRef.current;
+      const displayWidth = img.width;
+      const displayHeight = img.height;
+
+      const pixelCrop: PixelCrop =
+        crop.unit === "%"
+          ? {
+              unit: "px",
+              x: (crop.x / 100) * displayWidth,
+              y: (crop.y / 100) * displayHeight,
+              width: (crop.width / 100) * displayWidth,
+              height: (crop.height / 100) * displayHeight,
+            }
+          : {
+              ...crop,
+              unit: "px",
+            };
+
+      if (pixelCrop.width <= 0 || pixelCrop.height <= 0) {
+        alert("자르기 영역을 선택해주세요.");
+        return;
+      }
+
+      const resultFile = await cropImage(img, pixelCrop, file.name);
+
+      onSave(resultFile);
+    } catch (error) {
+      console.error(error);
+      alert("이미지 자르기에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60">
+      <div className="w-[500px] max-w-[95vw] rounded-lg bg-white p-4">
+        <h3 className="mb-3 text-lg font-bold">사진 편집</h3>
+
+        {/* 3:4 비율 설정 */}
+        <div className="mb-3 flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={fixedRatio}
+            onChange={(e) => handleRatioChange(e.target.checked)}
+          />
+          <span className="text-sm">3:4 비율 고정</span>
+        </div>
+
+        {/* 사진 영역 */}
+        <div className="flex h-[400px] items-center justify-center overflow-auto bg-gray-900 p-3">
+          {imageUrl && (
+            <ReactCrop
+              crop={crop}
+              onChange={(nextCrop) => setCrop(nextCrop)}
+              onComplete={(nextCrop) => setCompletedCrop(nextCrop)}
+              aspect={fixedRatio ? 3 / 4 : undefined}
+              minWidth={20}
+              minHeight={20}
+              keepSelection
+              ruleOfThirds>
+              <img
+                ref={imgRef}
+                src={imageUrl}
+                alt="편집할 사진"
+                onLoad={onImageLoad}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "370px",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+            </ReactCrop>
+          )}
+        </div>
+
+        {/* 선택 영역 정보 */}
+        <div className="mt-3 text-xs text-gray-500">
+          {completedCrop
+            ? `선택 영역: ${Math.round(completedCrop.width)} × ${Math.round(completedCrop.height)}px (화면 기준)`
+            : "마우스로 자르기 영역을 선택하세요."}
+        </div>
+
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded border px-4 py-2">
+            취소
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || !crop}
+            className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">
+            {saving ? "처리 중" : "자르기 완료"}
+          </button>
+        </div>
       </div>
     </div>
   );

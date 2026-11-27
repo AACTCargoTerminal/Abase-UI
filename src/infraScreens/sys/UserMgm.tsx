@@ -72,7 +72,7 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
     }, []);
     useImperativeHandle(ref, () => ({
       onModalPayload(payload: TableRow) {
-        if (payload["CLOSE"] === "CLOSE" || payload["SEARCH"] === "SEARCH") {
+        if (payload["CLOSE"] === "CLOSE") {
           searchClick();
         }
       },
@@ -168,6 +168,53 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
       }
     }
 
+    async function getOrg() {
+      sendLoading(true);
+      const ret = await getApi<string>({
+        baseUrl: "INFRA",
+        method: "GET",
+        url: `/work/getOrgExcel`,
+        pgmId: pgmId,
+        sucFlag: true,
+      });
+      sendLoading(false);
+
+      if (ret.ok) {
+        if (ret.data) {
+          const base64 = ret.data;
+
+          const byteCharacters = atob(base64);
+
+          const byteNumbers = new Array(byteCharacters.length);
+
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+
+          const blob = new Blob([byteArray], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+
+          const a = document.createElement("a");
+
+          a.href = url;
+          a.download = `${dayjs().format("YYYY_MM_DD")}조직도.xlsx`;
+
+          document.body.appendChild(a);
+
+          a.click();
+
+          a.remove();
+
+          window.URL.revokeObjectURL(url);
+        }
+      }
+    }
+
     async function uploadClick(e: React.ChangeEvent<HTMLInputElement>) {
       const fileRet = await setUserGroupFile({ e: e });
 
@@ -194,8 +241,8 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
 
     return (
       <div className="flex flex-col gap-5 py-[0.5%]">
-        <CommonContainer title="조회 및 버튼" width="80%">
-          <div className="grid grid-cols-[20%_20%_20%_10%_10%] items-center gap-6">
+        <CommonContainer title="조회 및 버튼" width="90%">
+          <div className="grid grid-cols-[15%_15%_15%_8%_0%] items-center gap-6">
             <div className="mainInput">
               <CommonDropDown
                 data={dptcd}
@@ -277,6 +324,13 @@ const UserMgm = forwardRef<PageHandle, DefInfraComp>(
                 type="NONE"
                 onClick={() => {
                   document.getElementById("excelFileUser")?.click();
+                }}
+              />
+              <Btn
+                txt="조직도"
+                type="EXCEL"
+                onClick={() => {
+                  getOrg();
                 }}
               />
             </div>

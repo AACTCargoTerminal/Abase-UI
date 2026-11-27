@@ -26,20 +26,29 @@ export const commonHeader5: TableHeaderType[] = [
 export const commonHeader6: TableHeaderType[] = [
   { key: "CODE_NAME2", value: "", w: "12rem" },
 ];
+export const commonHeader7: TableHeaderType[] = [
+  { key: "CODE_NAME", value: "코드명", w: "8rem" },
+  { key: "VALUE1_CHAR", value: "", w: "5rem" },
+];
 
 export const SchChgHeader: TableHeaderType[] = [
-  { key: "FLIGHT_NO", value: "Flight No", w: "6rem", type: "STR", sum: 0 },
-  { key: "ROUTE_NAME", value: "경로", w: "8rem", type: "STR" },
-  { key: "ACTUAL_TIME", value: "실제 시간", w: "6rem", type: "STR" },
-  { key: "FLIGHT_STATUS_NAME", value: "상태", w: "6rem", type: "STR" },
+  {
+    key: "FLIGHT_NO",
+    value: "Flight No",
+    w: "6rem",
+    sum: 0,
+  },
+  { key: "ROUTE_NAME", value: "경로", w: "8rem" },
+  { key: "ACTUAL_TIME", value: "실제 시간", w: "6rem" },
+  { key: "FLIGHT_STATUS_NAME", value: "상태", w: "6rem" },
 ];
 
 export const SchHeader: TableHeaderType[] = [
-  { key: "INOUT_FLAG_NAME", value: "구분", w: "3rem", type: "STR" },
-  { key: "ESTIMATED_TIME", value: "시간", w: "4rem", type: "STR" },
-  { key: "FLIGHT_NO", value: "편번", w: "4rem", type: "STR" },
-  { key: "ORIGIN_CODE", value: "출발지", w: "3.5rem", type: "STR" },
-  { key: "DESTINATION_CODE", value: "도착지", w: "3.5rem", type: "STR" },
+  { key: "INOUT_FLAG_NAME", value: "구분", w: "3rem" },
+  { key: "ESTIMATED_TIME", value: "시간", w: "4rem" },
+  { key: "FLIGHT_NO", value: "편번", w: "4rem" },
+  { key: "ORIGIN_CODE", value: "출발지", w: "3.5rem" },
+  { key: "DESTINATION_CODE", value: "도착지", w: "3.5rem" },
 ];
 
 export const FwbMapInHeader: TableHeaderType[] = [
@@ -76,7 +85,13 @@ export const fhlGrid1Header: TableHeaderType[] = [
   { key: "HD_CREATED_TIME_DISP", value: "DateTime", w: "10rem" },
   { key: "MAWB_NO", value: "MAWB NO", w: "8rem", sum: 0 },
   { key: "HAWB_NO", value: "HAWB NO", w: "8rem" },
-  { key: "HAWB_NO_OF_PIECES", value: "Pcs", w: "4rem", type: "NUM", sum: 0 },
+  {
+    key: "HAWB_NO_OF_PIECES",
+    value: "Pcs",
+    w: "4rem",
+    type: "NUM",
+    sum: 0,
+  },
   { key: "HAWB_WEIGHT", value: "Wgt", w: "5rem", type: "DOUBLE", sum: 1 },
   { key: "HAWB_MFST_DESC_GOODS", value: "Desc", w: "10rem" },
   { key: "MM_CREATED_USER_ID", value: "Creator", w: "5rem" },

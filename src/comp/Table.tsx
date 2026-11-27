@@ -43,9 +43,17 @@ function summarize(
 
   for (const h of targets) {
     let acc = 0;
+    let option = h.typeOption || {};
+
     for (const r of rows) {
       const v = r[h.key];
       if (v == null || v === "") continue;
+
+      const isMatch = Object.keys(option).every(
+        (key) => r[key] === option[key],
+      );
+
+      if (!isMatch) continue;
 
       if (!h.type || h.type === "STR") {
         acc += 1;
@@ -1225,10 +1233,8 @@ export const TableCust2 = React.memo(
         // 새로운 행 선택
         selectedRowIndexRef.current = i;
 
-        const pre = onRowPrepared?.(r, i);
-
         if (rowRefs.current[i]) {
-          rowRefs.current[i]!.style.backgroundColor = pre?.lines || "#FAEDB6";
+          rowRefs.current[i]!.style.backgroundColor = "#FAEDB6";
         }
       }, 250);
     };
@@ -1519,17 +1525,19 @@ export const TableCust2 = React.memo(
                     className={`${
                       isSticky ? "z-20" : "z-10"
                     } tableSz text-center shrink-0 font-semibold px-2 overflow-hidden
-             h-[2rem] flex items-center justify-center`}
+    h-[2rem] flex items-center justify-center`}
                     style={{
                       width: item.w,
                       position: isSticky ? "sticky" : undefined,
                       left,
                       background: "#E4E4E4",
                     }}>
-                    {item.sum || item.sum === 0
-                      ? item.sum === 0
-                        ? sumArray[item.key] || "0"
-                        : sumArray[item.key]?.toFixed(item.sum) || ""
+                    {item.sum !== undefined
+                      ? item.type === "NUM"
+                        ? (sumArray[item.key] ?? 0).toLocaleString("ko-KR")
+                        : item.sum === 0
+                          ? (sumArray[item.key] ?? 0).toString()
+                          : (sumArray[item.key]?.toFixed(item.sum) ?? "")
                       : ""}
                   </span>
                 );
@@ -1859,15 +1867,20 @@ const CellCust2 = React.memo(
             }`}
             style={{ userSelect: "text" }}>
             <span className="mx-auto shrink-0 whitespace-nowrap">
-              {custValue !== undefined
-                ? custValue
-                : value !== undefined && value !== null
-                  ? value
-                  : headerType.type
-                    ? headerType.type === "STR"
-                      ? ""
-                      : 0
-                    : ""}
+              {(() => {
+                const v = custValue !== undefined ? custValue : value;
+
+                if (v === undefined || v === null || v === "") {
+                  return headerType.type && headerType.type !== "STR" ? 0 : "";
+                }
+
+                if (headerType.type === "NUM") {
+                  const num = Number(String(v).replace(/,/g, ""));
+                  return Number.isFinite(num) ? num.toLocaleString("ko-KR") : v;
+                }
+
+                return v;
+              })()}
             </span>
           </span>
         );
