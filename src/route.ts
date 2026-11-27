@@ -42,6 +42,8 @@ export const ROUTE_INFRA_IMPORTERS = {
   INFRASYS110: () => import("./infraScreens/sys/CommonMgm"),
   APPR010: () => import("./infraScreens/appr/ApprMgm"),
   APPR020: () => import("./infraScreens/appr/ApprView"),
+  WORK060: () => import("./infraScreens/work/WorkNightMgm"),
+  WORK070: () => import("./infraScreens/work/WorkNightAdm"),
 } as const;
 
 export type RouteInfraKey = keyof typeof ROUTE_INFRA_IMPORTERS;
@@ -67,6 +69,8 @@ export const INFRA_ROUTE_MAP: Record<
   INFRASYS110: React.lazy(ROUTE_INFRA_IMPORTERS.INFRASYS110),
   APPR010: React.lazy(ROUTE_INFRA_IMPORTERS.APPR010), //IFAPR0010,/infraScreens/appr/,APPRMGM,결재 관리,MDI
   APPR020: React.lazy(ROUTE_INFRA_IMPORTERS.APPR020), //IFAPR0020,/infraScreens/appr/,APPRVIEW,결재 관리,MDI
+  WORK060: React.lazy(ROUTE_INFRA_IMPORTERS.WORK060),
+  WORK070: React.lazy(ROUTE_INFRA_IMPORTERS.WORK070),
 };
 
 export const MODAL_ROUTE_IMPORTERS = {
@@ -94,6 +98,7 @@ export const MODAL_ROUTE_IMPORTERS = {
   WORK_TIME_ADM_INS: () => import("./infraScreens/work/WorkTimeAdmInsert"),
   WORK_HR_CAPS: () => import("./infraScreens/work/WorkHrCaps"),
   WORK_HR_CAPS_SEARCH: () => import("./infraScreens/work/WorkHrCapsSearch"),
+  WORK_NT_INS: () => import("./infraScreens/work/WorkNightInsert"),
 } as const;
 
 export type ModalRouteKey = keyof typeof MODAL_ROUTE_IMPORTERS;
@@ -126,6 +131,7 @@ export const MODAL_ROUTE_MAP: Record<
   WORK_TIME_ADM_INS: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_TIME_ADM_INS),
   WORK_HR_CAPS: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_HR_CAPS),
   WORK_HR_CAPS_SEARCH: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_HR_CAPS_SEARCH),
+  WORK_NT_INS: React.lazy(MODAL_ROUTE_IMPORTERS.WORK_NT_INS),
 };
 
 export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
@@ -189,6 +195,7 @@ export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
   USERRESMGM: [
     { type: "SEARCH", txt: "신규", actionType: "MODAL" },
     { type: "SAVE", txt: "저장", actionType: "MODAL" },
+    { type: "NONE", txt: "사진저장", actionType: "MODAL" },
     { type: "DELETE", txt: "삭제", actionType: "MODAL" },
   ],
   WORK_TIME_INS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
@@ -196,6 +203,10 @@ export const MODAL_BTN_MAP: Record<ModalRouteKey, BtnType[]> = {
   WORK_TIME_ADM_INS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
   WORK_HR_CAPS: [{ type: "SAVE", txt: "저장", actionType: "MODAL" }],
   WORK_HR_CAPS_SEARCH: [],
+  WORK_NT_INS: [
+    { type: "SAVE", txt: "저장", actionType: "MODAL" },
+    { type: "NONE", txt: "등본제출", actionType: "MODAL" },
+  ],
 };
 
 export const MODAL_SIZE_MAP: Record<
@@ -226,4 +237,5 @@ export const MODAL_SIZE_MAP: Record<
   WORK_TIME_ADM_INS: "md",
   WORK_HR_CAPS: "md",
   WORK_HR_CAPS_SEARCH: "md",
+  WORK_NT_INS: "md",
 };

@@ -22,7 +22,6 @@ const InfraMain = () => {
     (state: RootState) => state.user.userInfo?.userId || "",
   );
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -31,30 +30,6 @@ const InfraMain = () => {
     window.addEventListener("resize", checkMobile);
 
     return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  useEffect(() => {
-    async function check() {
-      const res = await getApi<UserInfoType>({
-        baseUrl: "AUTH",
-        method: "GET",
-        url: "/user/verity",
-        pgmId: "",
-      });
-      if (res.ok) {
-        if (res.data) {
-          dispatch(changeAutoFlag(false));
-          dispatch(pushUserInfo(res.data));
-        }
-      }
-    }
-    check();
-
-    const id = setInterval(check, 5 * 60 * 1000);
-
-    return () => {
-      clearInterval(id);
-    };
   }, []);
 
   const getSub = (allData: Array<any>): Array<any> => {

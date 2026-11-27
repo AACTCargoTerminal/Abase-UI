@@ -11,7 +11,7 @@ import React, {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { changeVisible, clearAllErr, delError } from "../slices/err";
+import { changeRd, changeVisible, clearAllErr, delError } from "../slices/err";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   type BtnType,
@@ -58,15 +58,7 @@ export const Error = () => {
     if (!err.rd) return;
 
     navigate("/");
-
-    const timer = setTimeout(() => {
-      dispatch(clearAllErr());
-    }, 500);
-
-    // 3) 컴포넌트 언마운트/rd 변할 때 타이머 정리
-    return () => {
-      clearTimeout(timer);
-    };
+    dispatch(changeRd(false));
   }, [err.rd]);
 
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);

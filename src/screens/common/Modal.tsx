@@ -52,6 +52,10 @@ export default function Modal({
       onClose={() => {
         dispatch(pushModalFlag(false));
         setSelectNod(0);
+        if (closeRef.current) {
+          outParam?.(closeRef.current);
+          closeRef.current = null;
+        }
       }}
       deviceType={deviceType}
       title={
@@ -82,6 +86,7 @@ export default function Modal({
                   txt={item.txt}
                   type={item.type}
                   actionType={item.actionType}
+                  deviceType={deviceType}
                 />
               )),
             }
@@ -105,10 +110,6 @@ export default function Modal({
             onClose={() => {
               dispatch(pushModalFlag(false));
               setSelectNod(0);
-              if (closeRef.current) {
-                outParam?.(closeRef.current);
-                closeRef.current = null;
-              }
             }}
             param={params || {}}
             pgmId={item.PROGRAM_ID}

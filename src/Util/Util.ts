@@ -21,10 +21,11 @@ import {
 } from "../slices/user";
 import * as XLSX from "xlsx-js-style";
 import { saveAs } from "file-saver";
-import { useSelector } from "react-redux";
-import type { Dispatch, SetStateAction } from "react";
-import { useLocation } from "react-router-dom";
 import type { ModalRouteKey } from "../route";
+import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+GlobalWorkerOptions.workerSrc = pdfWorker;
 
 type ApiUrlType = "AUTH" | "CIMP" | "INFRA" | "SYS";
 const server: Record<ApiUrlType, any> = {
@@ -259,8 +260,10 @@ export async function getApi<T>({
 
     return { ok: false, data: null };
   } catch (e: any) {
+    store.dispatch(changeAutoFlag(true));
+    store.dispatch(changeRd(true));
     store.dispatch(
-      pushError({ id: uuidv4(), errFlag: "Y", errMsg: e.message }),
+      pushError({ id: uuidv4(), errFlag: "Y", errMsg: "시스템 점검중" }),
     );
     return { ok: false, data: null };
   }
@@ -332,7 +335,7 @@ export function confirmObj({
 }) {
   const trimmed = obj ?? "";
   try {
-    switch (type) {
+    switch (Object.keys(type)[0]) {
       case "NUM": {
         if (trimmed === "") return 0;
 
@@ -804,6 +807,26 @@ export function base64ToPdfUrl(b64: string, type: string): string {
   return URL.createObjectURL(blob);
 }
 
+export const base64ToFile = (
+  base64: string,
+  fileName: string,
+  mimeType: string = "image/png",
+): File => {
+  // data:image/png;base64,... 형태도 처리
+  const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
+
+  const binary = atob(base64Data);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  return new File([bytes], fileName, {
+    type: mimeType,
+  });
+};
+
 //프로그램 정보가져오기
 export async function getPgmInfo(
   pgmId: string,
@@ -1003,3 +1026,28 @@ export const isValidDate = (dateStr: string): boolean => {
     date.getDate() === day
   );
 };
+
+export async function checkPdfPassword(file: File): Promise<boolean> {
+  const buffer = await file.arrayBuffer();
+
+  const loadingTask = getDocument({
+    data: new Uint8Array(buffer),
+  });
+
+  try {
+    await loadingTask.promise;
+
+    return false; // 비밀번호 없음
+  } catch (error: any) {
+    if (
+      error?.name === "PasswordException" ||
+      error?.name === "PasswordResponseException"
+    ) {
+      return true; // 비밀번호 보호 PDF
+    }
+
+    throw error; // 손상된 PDF 등 다른 오류
+  } finally {
+    await loadingTask.destroy();
+  }
+}

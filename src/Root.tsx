@@ -12,7 +12,12 @@ import type { TableHeaderType, TableRow, UserInfoType } from "./Util/Type";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "./slices/store";
 import { useNavigate } from "react-router-dom";
-import { changeAutoFlag, clearAll, clearAllUser } from "./slices/user";
+import {
+  changeAutoFlag,
+  clearAll,
+  clearAllUser,
+  pushUserInfo,
+} from "./slices/user";
 import imgLogin from "./assets/images/loginImg.png";
 import { clearAllErr } from "./slices/err";
 const header: TableHeaderType[] = [
@@ -87,6 +92,22 @@ export default function Root() {
     }
   }, [saveFlag, formData.username]);
 
+  async function getUserInfo() {
+    const res = await getApi<UserInfoType>({
+      baseUrl: "AUTH",
+      method: "GET",
+      url: "/user/verity",
+      pgmId: "",
+    });
+    if (res.ok) {
+      if (res.data) {
+        dispatch(changeAutoFlag(false));
+        dispatch(pushUserInfo(res.data));
+        navigate(`/${selectTab?.["CODE_CODE"].toLowerCase()}/Main`);
+      }
+    }
+  }
+
   const click = async () => {
     dispatch(clearAll());
     dispatch(clearAllErr());
@@ -124,7 +145,7 @@ export default function Root() {
       pgmId: "LOGIN",
     });
     if (loginRes.ok) {
-      navigate(`/${selectTab?.["CODE_CODE"].toLowerCase()}/Main`);
+      await getUserInfo();
     }
   };
 

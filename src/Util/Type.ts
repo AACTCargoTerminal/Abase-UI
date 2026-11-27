@@ -168,6 +168,7 @@ type BaseHeader = {
   w: string;
   sum?: number;
   type?: TableObjType;
+  typeOption?: TableRow;
   read?: boolean;
   disable?: boolean;
   maxLength?: number;

@@ -114,30 +114,6 @@ const Header = React.memo(
       buildMenu();
     }, []);
 
-    useEffect(() => {
-      async function check() {
-        const res = await getApi<UserInfoType>({
-          baseUrl: "AUTH",
-          method: "GET",
-          url: "/user/verity",
-          pgmId: "",
-        });
-        if (res.ok) {
-          if (res.data) {
-            dispatch(changeAutoFlag(false));
-            dispatch(pushUserInfo(res.data));
-          }
-        }
-      }
-      check();
-
-      const id = setInterval(check, 5 * 60 * 1000);
-
-      return () => {
-        clearInterval(id);
-      };
-    }, []);
-
     const buildMenu = async () => {
       const res = await getApi<Record<number, any>>({
         baseUrl: "AUTH",

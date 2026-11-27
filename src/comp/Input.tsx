@@ -798,3 +798,165 @@ export const CommonLabel = React.memo(
     return prev.id === next.id && prev.label === next.label;
   },
 );
+
+export const PhoneInput = React.memo(
+  function PhoneInput({
+    check,
+    id,
+    label,
+    value,
+    onChange,
+    read = false,
+    backColor,
+    align = "NONE",
+    labelW,
+    setClear,
+    holder,
+  }: {
+    check?: boolean;
+    id: string;
+    label?: string;
+    value: string;
+    onChange?: (value: string) => void;
+    read?: boolean;
+    backColor?: string;
+    align?: "NONE" | "COL";
+    labelW?: string;
+    setClear?: boolean;
+    holder?: string;
+  }) {
+    const [changeValue, setChangeValue] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // 전화번호 포맷
+    function formatPhone(value: string): string {
+      const num = value.replace(/\D/g, "").slice(0, 11);
+
+      if (!num) return "";
+
+      // 서울 지역번호 (02)
+      if (num.startsWith("02")) {
+        if (num.length <= 2) return num;
+        if (num.length <= 5) return `${num.slice(0, 2)}-${num.slice(2)}`;
+        if (num.length <= 9) {
+          return `${num.slice(0, 2)}-${num.slice(2, 5)}-${num.slice(5)}`;
+        }
+        return `${num.slice(0, 2)}-${num.slice(2, 6)}-${num.slice(6)}`;
+      }
+
+      // 휴대폰 및 일반 지역번호 (010, 032 등)
+      if (num.length <= 3) return num;
+      if (num.length <= 7) return `${num.slice(0, 3)}-${num.slice(3)}`;
+
+      if (num.length === 10) {
+        return `${num.slice(0, 3)}-${num.slice(3, 6)}-${num.slice(6)}`;
+      }
+
+      return `${num.slice(0, 3)}-${num.slice(3, 7)}-${num.slice(7)}`;
+    }
+
+    // 부모 value 변경 시 반영
+    useEffect(() => {
+      setChangeValue(formatPhone(value || ""));
+    }, [value]);
+
+    // 입력 처리
+    function changeData(e: React.ChangeEvent<HTMLInputElement>) {
+      const formatted = formatPhone(e.target.value);
+      setChangeValue(formatted);
+    }
+
+    return (
+      <div
+        className={`flex w-full rounded-md ${
+          align === "NONE"
+            ? "items-center gap-2 h-full"
+            : "flex-col gap-1 h-[3.6rem]"
+        }`}
+        style={{
+          backgroundColor: backColor || "transparent",
+        }}>
+        {label && (
+          <div
+            className={`flex gap-1 items-center ${
+              align === "COL" ? "h-[35%] px-[1rem]" : "w-[var(--w-label)]"
+            }`}
+            style={
+              {
+                "--w-label": labelW || "35%",
+              } as React.CSSProperties
+            }>
+            <label
+              htmlFor={id}
+              className={`text-nowrap ${
+                align === "COL" ? "text-gray-500" : "text-gray-800"
+              }`}>
+              {label}
+            </label>
+
+            {check && (
+              <div className="h-full flex items-start">
+                <span className="text-red-500 text-nowrap font-bold">*</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex-1 h-full flex items-center gap-1">
+          <input
+            ref={inputRef}
+            id={id}
+            type="tel"
+            inputMode="numeric"
+            placeholder={holder}
+            className={`peer w-full h-full flex items-center bg-[#FFFFFF]
+              text-left rounded-md px-3 py-1
+              ${
+                read
+                  ? "border-2 border-gray-400 bg-gray-100 focus:outline-none"
+                  : check && changeValue.length === 0
+                    ? "border border-red-200 bg-red-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    : "border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              }`}
+            value={changeValue}
+            onChange={changeData}
+            onBlur={() => {
+              const num = changeValue.replace(/[^0-9-]/g, "");
+
+              if (!num) {
+                onChange?.("");
+                return;
+              }
+
+              setChangeValue(formatPhone(changeValue));
+              onChange?.(changeValue);
+            }}
+            readOnly={read}
+            maxLength={13}
+            onFocus={() => {
+              if (setClear && !read) {
+                setChangeValue("");
+                onChange?.("");
+              }
+            }}
+            autoComplete="tel"
+          />
+        </div>
+      </div>
+    );
+  },
+  (prev, next) => {
+    return (
+      prev.id === next.id &&
+      prev.value === next.value &&
+      prev.label === next.label &&
+      prev.onChange === next.onChange &&
+      prev.check === next.check &&
+      prev.read === next.read &&
+      prev.backColor === next.backColor &&
+      prev.align === next.align &&
+      prev.labelW === next.labelW &&
+      prev.setClear === next.setClear
+    );
+  },
+);
